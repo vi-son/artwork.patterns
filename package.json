@@ -1,7 +1,7 @@
 {
-  "name": "template.artwort",
+  "name": "artwork.running-patterns",
   "version": "0.0.0",
-  "description": "Template project for artworks in the vi.son - mixing-senses project",
+  "description": "Running Patterns/Laufende Muster artwork for the vi.son - mixing-senses project",
   "main": "src/js/index.js",
   "scripts": {
     "dev": "npx webpack-dev-server --open --hot --mode development --env.NODE_ENV=development",
@@ -9,9 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vi-son/template.artwort.git"
+    "url": "git+https://github.com/vi-son/artwork.running-patterns.git"
   },
-  "keywords": [],
+  "keywords": [
+    "creative code",
+    "audio-reactive",
+    "music",
+    "visualization"
+  ],
   "author": "Guido Schmidt <git@guidoschmidt.cc>",
   "license": "CC-BY-4.0",
   "bugs": {
@@ -43,6 +48,7 @@
     "shelljs": "^0.8.4",
     "style-loader": "^2.0.0",
     "three": "^0.122.0",
+    "three-quaternion-from-normal": "^1.0.0",
     "webpack": "^4.44.2",
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.11.0",

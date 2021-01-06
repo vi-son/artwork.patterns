@@ -39,7 +39,8 @@ module.exports = env => {
     resolve: {
       extensions: [".js"],
       alias: {
-        "@sass": path.join(__dirname, "src/sass/")
+        "@sass": path.join(__dirname, "src/sass/"),
+        "@glsl": path.join(__dirname, "src/glsl/")
       }
     },
     optimization: {
@@ -94,7 +95,12 @@ module.exports = env => {
     plugins: [
       new webpack.DefinePlugin({
         "process.env.NODE_ENV": JSON.stringify(env.NODE_ENV),
-        "process.env.VERSION": JSON.stringify(getVersionFromGit())
+        "process.env.VERSION": JSON.stringify(getVersionFromGit()),
+        "process.env.TRACKS": JSON.stringify(
+          fs
+            .readdirSync(path.resolve(__dirname, "assets/audio/patterns/"))
+            .filter(e => e !== ".DS_Store")
+        )
       }),
       new HtmlWebpackPlugin({
         template: __dirname + "/src/html/index.html",
@@ -104,6 +110,7 @@ module.exports = env => {
       new FaviconsWebpackPlugin(
         path.resolve(`${__dirname}/assets/svg/favicon.svg`)
       ),
+      new CopyPlugin([{ from: "assets", to: "assets" }]),
       new WorkboxPlugin.GenerateSW({
         swDest: "sw.js",
         clientsClaim: true,
