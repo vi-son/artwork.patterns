@@ -6,6 +6,7 @@ import Narrative from "./components/Narrative.js";
 import ButtonCloseNarrative from "./components/ButtonCloseNarrative.js";
 import ButtonOpenNarrative from "./components/ButtonOpenNarrative.js";
 import ButtonToExhibition from "./components/ButtonToExhibition.js";
+import Patterns from "./artwork/Patterns.js";
 // Style imports
 import "../sass/index.sass";
 
@@ -17,7 +18,7 @@ const Artwork = () => {
     console.group("Version");
     console.log(process.env.VERSION);
     console.groupEnd();
-    get(`/pages/audiovis-io`).then(d => {
+    get(`/pages/running-patterns`).then(d => {
       setContent(d.content);
     });
   }, []);
@@ -25,7 +26,7 @@ const Artwork = () => {
   return (
     <>
       <div className="canvas-wrapper">
-        <canvas />
+        <Patterns />
         <ButtonOpenNarrative
           showNarrative={showNarrative}
           setShowNarrative={setShowNarrative}
