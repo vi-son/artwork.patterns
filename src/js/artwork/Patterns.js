@@ -4,6 +4,9 @@ import ReactDOM from "react-dom";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import quaternionFromNormal from "three-quaternion-from-normal";
+import TWEEN from "tween.js";
+import * as dat from "dat.gui";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 // Local imports
 import createLineGeometry from "./createLineGeometry.js";
 // Style imports
@@ -23,6 +26,8 @@ const Artwork = () => {
     Array.from({ length: 5 }, () => Array.from({ length: 32 }, () => null))
   );
   const [progress, setProgress] = useState(0);
+  const [freqIndex] = useState(3);
+  const [threshold] = useState(10);
 
   const remap = (v, a, b, c, d) => {
     const newval = ((v - a) / (b - a)) * (d - c) + c;
@@ -39,12 +44,8 @@ const Artwork = () => {
 
     // compute the TBN matrix
     const T = next.sub(current).normalize();
-    const B = T.clone()
-      .cross(next.clone().add(current))
-      .normalize();
-    const N = B.clone()
-      .cross(T)
-      .normalize();
+    const B = T.clone().cross(next.clone().add(current)).normalize();
+    const N = B.clone().cross(T).normalize();
 
     return [N, B, T];
   };
@@ -64,6 +65,15 @@ const Artwork = () => {
     let $t = clock.getElapsedTime();
     let $f = 0;
 
+    let stats;
+    if (process.env.NODE_ENV === "development") {
+      // Stats
+      stats = new Stats();
+      document.body.appendChild(stats.dom);
+      // Gui
+      const gui = new dat.GUI();
+    }
+
     // Scene
     const scene = new THREE.Scene();
 
@@ -71,7 +81,7 @@ const Artwork = () => {
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
       antialias: 1,
-      alpha: true
+      alpha: true,
     });
     renderer.setSize(size.width, size.height);
     renderer.autoClear = false;
@@ -159,9 +169,9 @@ const Artwork = () => {
       vertexShader: backgroundVS,
       fragmentShader: backgroundFS,
       uniforms: {
-        uResolution: { value: new THREE.Vector2(size.width, size.height) }
+        uResolution: { value: new THREE.Vector2(size.width, size.height) },
       },
-      depthWrite: false
+      depthWrite: false,
     });
     var planeGeometry = new THREE.PlaneGeometry(2, 2);
     var backgroundPlane = new THREE.Mesh(planeGeometry, backgroundMaterial);
@@ -175,25 +185,25 @@ const Artwork = () => {
       fragmentShader: tubeFS,
       side: THREE.FrontSide,
       extensions: {
-        deriviatives: true
+        deriviatives: true,
       },
       defines: {
         lengthSegments: subdivisions.toFixed(1),
-        FLAT_SHADED: false
+        FLAT_SHADED: false,
       },
       uniforms: {
         uResolution: {
           type: "vec2",
-          value: new THREE.Vector2(size.width, size.height)
+          value: new THREE.Vector2(size.width, size.height),
         },
         uThickness: { type: "f", value: 0.005 },
         uTime: { type: "f", value: 2.5 },
         uRadialSegments: { type: "f", value: numSides },
         uPoints: {
           type: "a",
-          value: [startPoint, startHandlePosition, endHandlePosition, endPoint]
-        }
-      }
+          value: [startPoint, startHandlePosition, endHandlePosition, endPoint],
+        },
+      },
     });
     const tubeGeometry = createLineGeometry(numSides, subdivisions);
     const instTubeMaterial = tubeMaterial.clone();
@@ -212,7 +222,17 @@ const Artwork = () => {
     var audioLoader = new THREE.AudioLoader(loadingManager);
     let audioDuration = 0;
     let audioPlayProgress = 0;
-    const audioTracks = process.env.TRACKS.slice(0, 1);
+
+    const colors = [
+      new THREE.Color(0xff0000),
+      new THREE.Color(0x00ff00),
+      new THREE.Color(0x0000ff),
+      new THREE.Color(0xff00ff),
+      new THREE.Color(0x00ffff),
+    ];
+    const angles = [0, 72, 144, 216, 288];
+
+    const audioTracks = process.env.TRACKS;
     console.log("Tracks", audioTracks);
     const sounds = new Array(audioTracks.length)
       .fill(undefined)
@@ -220,14 +240,14 @@ const Artwork = () => {
     audioTracks.map((track, i) => {
       audioLoader.load(
         `/assets/audio/patterns/${track}`,
-        function(buffer) {
+        function (buffer) {
           audioDuration = buffer.duration;
           sounds[i].setBuffer(buffer);
           sounds[i].setLoop(false);
           sounds[i].setVolume(1.0);
           sounds[i].play();
         },
-        function(xhr) {
+        function (xhr) {
           console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
         }
       );
@@ -237,21 +257,27 @@ const Artwork = () => {
     // Audio debug helper
     const audioFreqHelperArray = new Array(audioTracks.length)
       .fill(0)
-      .map(_ => new Array(32).fill(undefined));
+      .map((_) => new Array(32).fill(undefined));
     const audioFreqHelperMaterial = new THREE.MeshBasicMaterial({
       color: 0x000000,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
     const patternGroup = new THREE.Group();
     const patternMaterial = new THREE.ShaderMaterial({
       vertexShader: patternVS,
       fragmentShader: patternFS,
       uniforms: {
-        uColor: { value: new THREE.Vector3(1, 0, 0) }
+        // uColor: { value: new THREE.Color(0xff5b43) },
+        uColor: { value: new THREE.Color(0x2900f5) },
       },
       side: THREE.DoubleSide,
       transparent: true,
-      depthWrite: false
+      depthWrite: false,
+    });
+    const patternMaterials = colors.map((c) => {
+      const pm = patternMaterial.clone();
+      pm.uniforms.uColor.value = c;
+      return pm;
     });
     // After loading all sounds
     let allLoaded = false;
@@ -261,16 +287,23 @@ const Artwork = () => {
         const analyzer = new THREE.AudioAnalyser(s, 32);
         analysers[i] = analyzer;
         let freqData = analysers[i].getFrequencyData();
+        /*
         freqData.map((f, j) => {
-          var geometry = new THREE.PlaneBufferGeometry(0.1, 1, 1);
-          var freqHelperQuad = new THREE.Mesh(
-            geometry,
-            audioFreqHelperMaterial
-          );
+          console.log(freqIndex, j);
+          const geometry = new THREE.PlaneBufferGeometry(0.1, 1, 1);
+          let freqHelperQuad;
+          if (j === freqIndex) {
+            const material = audioFreqHelperMaterial.clone();
+            material.color.set(0xff0000);
+            freqHelperQuad = new THREE.Mesh(geometry, material);
+          } else {
+            freqHelperQuad = new THREE.Mesh(geometry, audioFreqHelperMaterial);
+          }
           audioFreqHelperArray[i][j] = freqHelperQuad;
-          freqHelperQuad.position.set(-0.5 + j * 0.11, 0, 10 + 1 * i);
+          freqHelperQuad.position.set(-0.5 + j * 0.11, 0, 3 + 1 * i);
           scene.add(freqHelperQuad);
         });
+        */
       });
 
       allLoaded = true;
@@ -281,9 +314,9 @@ const Artwork = () => {
       let copy = [...freqData];
       analysers.forEach((a, i) => {
         const freqData = a.getFrequencyData();
+        const avgFreqData = a.getAverageFrequency();
         setFreqData();
         let data = 0;
-        let threshold = 100;
         var samplePosition = sample(
           startPoint,
           startHandle.position,
@@ -298,6 +331,8 @@ const Artwork = () => {
           endPoint,
           audioPlayProgress
         );
+
+        /*
         for (var j = 0; j < freqData.length; j++) {
           audioFreqHelperArray[i][j].scale.set(
             1,
@@ -306,17 +341,31 @@ const Artwork = () => {
           );
           copy[i][j] = freqData[j];
         }
-        if ($f % 120 === 0) {
-          data = freqData[0];
+        */
+
+        if ($f % 60 === 0) {
+          data = freqData[freqIndex];
           if (data > threshold) {
-            const size = remap(data, 0, 100, 0.0, 0.2);
+            const size = remap(data, 0, 100, 0.01, 0.3);
             var patternGeometry = new THREE.PlaneBufferGeometry(0.03, size, 1);
+            patternGeometry.applyMatrix(
+              new THREE.Matrix4().makeTranslation(0, size / 2.0, 0)
+            );
             const newPatternGroup = new THREE.Group();
             scene.add(newPatternGroup);
 
-            const pattern = new THREE.Mesh(patternGeometry, patternMaterial);
+            const pattern = new THREE.Mesh(
+              patternGeometry,
+              patternMaterials[i]
+            );
             pattern.position.set(0, size / 2.0, 0);
             newPatternGroup.add(pattern);
+
+            var scale = { x: 0.01 };
+            const tween = new TWEEN.Tween(scale)
+              .to({ x: 1.0 }, 20)
+              .onUpdate(() => pattern.scale.set(1, scale.x, 1))
+              .start();
 
             const rotationMatrix = new THREE.Matrix4();
             rotationMatrix.makeBasis(
@@ -329,7 +378,7 @@ const Artwork = () => {
             newPatternGroup.quaternion.setFromRotationMatrix(rotationMatrix);
             newPatternGroup.rotateOnWorldAxis(
               tangent,
-              audioPlayProgress * 10.0
+              (angles[i] / 180.0) * Math.PI
             );
           }
         }
@@ -350,11 +399,11 @@ const Artwork = () => {
       vertexShader: patternVS,
       fragmentShader: patternFS,
       uniforms: {
-        uColor: { value: new THREE.Vector3(1, 0, 0) }
+        uColor: { value: new THREE.Vector3(1, 0, 0) },
       },
       side: THREE.DoubleSide,
       transparent: true,
-      depthWrite: false
+      depthWrite: false,
     });
     const planeGroup = new THREE.Group();
     scene.add(planeGroup);
@@ -431,16 +480,15 @@ const Artwork = () => {
           startPoint,
           startHandle.position,
           endHandle.position,
-          endPoint
+          endPoint,
         ];
       } else {
-        handlesGroup.children.forEach(h => {
+        handlesGroup.children.forEach((h) => {
           h.material.color.set(0x000000);
         });
       }
     }
 
-    let angle = 0;
     function updatePlane(t) {
       // Update normals
       const samplePosition = sample(
@@ -470,8 +518,6 @@ const Artwork = () => {
       const quaternionT = quaternionFromNormal(tangent);
       const quaternionBT = quaternionFromNormal(bitangent);
       planeGroup.quaternion.copy(quaternionT);
-      // planeGroup.rotateOnAxis(bitangent, 90.0);
-      // angle += 0.01;
 
       const rotationMatrix = new THREE.Matrix4();
       rotationMatrix.makeBasis(
@@ -482,18 +528,23 @@ const Artwork = () => {
 
       playhead.position.copy(samplePosition);
       playhead.quaternion.setFromRotationMatrix(rotationMatrix);
+
+      controls.target.copy(samplePosition);
+      controls.update();
     }
 
     // Render loop
     function render() {
       $t = clock.getElapsedTime();
       requestAnimationFrame(render);
+      TWEEN.update();
 
       updatePlane(audioPlayProgress);
 
       renderer.clear();
       renderer.render(backgroundScene, backgroundCamera);
       renderer.render(scene, camera);
+      stats.update();
 
       startHandleLine.geometry.attributes.position.array[3] =
         startHandle.position.x;
@@ -533,11 +584,28 @@ const Artwork = () => {
   return (
     <>
       <div className="freq-row">
-        {progress !== undefined ? <span>{progress} %</span> : ""}
+        {progress !== undefined ? (
+          <span>{Math.round(progress * 100.0)} %</span>
+        ) : (
+          ""
+        )}
+        <div className="progress-bar">
+          <div
+            className="progress"
+            style={{ width: `${progress * 100.0}%` }}
+          ></div>
+        </div>
         {freqData !== undefined ? (
           freqData.map((f, i) => {
             const row = f.map((v, j) => {
-              return <b key={`${i}${j}`}>{v}</b>;
+              return (
+                <b
+                  key={`${i}${j}`}
+                  className={j === freqIndex && v >= threshold ? "colored" : ""}
+                >
+                  {v}
+                </b>
+              );
             });
             return (
               <div key={i} className="row">

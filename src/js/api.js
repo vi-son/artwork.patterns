@@ -15,11 +15,11 @@ function get(route) {
     method: "GET",
     mode: "cors",
     cache: "default",
-    headers: headers
+    headers: headers,
   })
-    .then(r => r.json())
-    .then(json => json.data)
-    .then(d => {
+    .then((r) => r.json())
+    .then((json) => json.data)
+    .then((d) => {
       return d;
     });
 }

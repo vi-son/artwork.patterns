@@ -25,7 +25,7 @@ void main() {
   vec4 color_b = vec4(239.0 / 255.0, 233.0 / 255.0, 231.0 / 255.0, 1.0);
 
   vec2 gamma = vec2(6.0);
-  
+
   color = pillow(color_a, color_b, gamma, uv).rgb + rand(uv * 100.0) / 100.0;
 
   gl_FragColor = vec4(color, 1.0);
