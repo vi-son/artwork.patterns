@@ -149,7 +149,7 @@ const Artwork = () => {
     scene.add(endHandleLine);
 
     // Controls
-    var controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0.5, 0);
     controls.update();
     controls.enableZoom = true;
@@ -530,8 +530,10 @@ const Artwork = () => {
       playhead.position.copy(samplePosition);
       playhead.quaternion.setFromRotationMatrix(rotationMatrix);
 
-      controls.target.copy(samplePosition);
-      controls.update();
+      if (controls) {
+        controls.target.copy(samplePosition);
+        controls.update();
+      }
     }
 
     // Render loop
