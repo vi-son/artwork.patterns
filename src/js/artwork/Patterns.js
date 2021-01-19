@@ -224,11 +224,11 @@ const Artwork = () => {
     let audioPlayProgress = 0;
 
     const colors = [
-      new THREE.Color(0xff0000),
-      new THREE.Color(0x00ff00),
-      new THREE.Color(0x0000ff),
-      new THREE.Color(0xff00ff),
-      new THREE.Color(0x00ffff),
+      new THREE.Color(0x2b13ff),
+      new THREE.Color(0xd70c5c),
+      new THREE.Color(0xff961e),
+      new THREE.Color(0x0de2be),
+      new THREE.Color(0x6019ea),
     ];
     const angles = [0, 72, 144, 216, 288];
 
@@ -358,6 +358,7 @@ const Artwork = () => {
               patternGeometry,
               patternMaterials[i]
             );
+            // pattern.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
             pattern.position.set(0, size / 2.0, 0);
             newPatternGroup.add(pattern);
 
