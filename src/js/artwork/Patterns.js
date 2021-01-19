@@ -547,7 +547,7 @@ const Artwork = () => {
       renderer.clear();
       renderer.render(backgroundScene, backgroundCamera);
       renderer.render(scene, camera);
-      stats.update();
+      if (stats !== undefined) stats.update();
 
       startHandleLine.geometry.attributes.position.array[3] =
         startHandle.position.x;
