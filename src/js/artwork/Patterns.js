@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import * as THREE from "three";
+import { DragControls } from "three/examples/jsm/controls/DragControls.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import quaternionFromNormal from "three-quaternion-from-normal";
 import TWEEN from "tween.js";
@@ -27,7 +28,9 @@ const Artwork = () => {
   );
   const [progress, setProgress] = useState(0);
   const [freqIndex] = useState(3);
-  const [threshold] = useState(10);
+  const [threshold] = useState(30);
+  const [isHovering, setIsHovering] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const remap = (v, a, b, c, d) => {
     const newval = ((v - a) / (b - a)) * (d - c) + c;
@@ -60,7 +63,7 @@ const Artwork = () => {
   };
 
   useEffect(() => {
-    const size = canvasWrapperRef.current.getBoundingClientRect();
+    let currentSize = canvasWrapperRef.current.getBoundingClientRect();
     const clock = new THREE.Clock();
     let $t = clock.getElapsedTime();
     let $f = 0;
@@ -83,13 +86,13 @@ const Artwork = () => {
       antialias: 1,
       alpha: true,
     });
-    renderer.setSize(size.width, size.height);
+    renderer.setSize(currentSize.width, currentSize.height);
     renderer.autoClear = false;
 
     // Camera
     const camera = new THREE.PerspectiveCamera(
       60,
-      size.width / size.height,
+      currentSize.width / currentSize.height,
       0.1,
       100
     );
@@ -102,7 +105,7 @@ const Artwork = () => {
     const handlesGroup = new THREE.Group();
     var geometry = new THREE.SphereGeometry(0.02, 32, 32);
     var material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    var handleMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    var handleMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     var startSphere = new THREE.Mesh(geometry, material);
     startSphere.position.copy(startPoint);
     var endSphere = new THREE.Mesh(geometry, material);
@@ -123,6 +126,13 @@ const Artwork = () => {
     endHandle.position.copy(endHandlePosition);
     handlesGroup.add(startHandle);
     handlesGroup.add(endHandle);
+    const dragControls = new DragControls(
+      [startHandle, endHandle],
+      camera,
+      renderer.domElement
+    );
+    dragControls.addEventListener("drag", onDrag);
+    const dragGroup = new THREE.Group();
     scene.add(handlesGroup);
     var handleLinesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
     var points = [];
@@ -157,10 +167,10 @@ const Artwork = () => {
 
     // Background
     var backgroundCamera = new THREE.OrthographicCamera(
-      -2 / size.width,
-      +2 / size.width,
-      +2 / size.width,
-      -2 / size.width,
+      -2 / currentSize.width,
+      +2 / currentSize.width,
+      +2 / currentSize.width,
+      -2 / currentSize.width,
       -1,
       100
     );
@@ -169,7 +179,9 @@ const Artwork = () => {
       vertexShader: backgroundVS,
       fragmentShader: backgroundFS,
       uniforms: {
-        uResolution: { value: new THREE.Vector2(size.width, size.height) },
+        uResolution: {
+          value: new THREE.Vector2(currentSize.width, currentSize.height),
+        },
       },
       depthWrite: false,
     });
@@ -194,7 +206,7 @@ const Artwork = () => {
       uniforms: {
         uResolution: {
           type: "vec2",
-          value: new THREE.Vector2(size.width, size.height),
+          value: new THREE.Vector2(currentSize.width, currentSize.height),
         },
         uThickness: { type: "f", value: 0.005 },
         uTime: { type: "f", value: 2.5 },
@@ -279,6 +291,11 @@ const Artwork = () => {
       pm.uniforms.uColor.value = c;
       return pm;
     });
+    const patternGeometry = new THREE.PlaneBufferGeometry(0.03, 1, 1);
+    const pattern = new THREE.Mesh(patternGeometry, patternMaterials[0]);
+    patternGeometry.translate(0, 0.5, 0);
+    // pattern.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    let patternCount = 0;
     // After loading all sounds
     let allLoaded = false;
     var analysers = new Array(audioTracks.length).fill(undefined);
@@ -346,41 +363,41 @@ const Artwork = () => {
         if ($f % 60 === 0) {
           data = freqData[freqIndex];
           if (data > threshold) {
-            const size = remap(data, 0, 100, 0.01, 0.3);
-            var patternGeometry = new THREE.PlaneBufferGeometry(0.03, size, 1);
-            patternGeometry.applyMatrix(
-              new THREE.Matrix4().makeTranslation(0, size / 2.0, 0)
-            );
             const newPatternGroup = new THREE.Group();
+            patternGroup.position.set(0, size / 2.0, 0);
             scene.add(newPatternGroup);
 
-            const pattern = new THREE.Mesh(
-              patternGeometry,
-              patternMaterials[i]
-            );
-            // pattern.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-            pattern.position.set(0, size / 2.0, 0);
-            newPatternGroup.add(pattern);
+            const newPattern = pattern.clone();
+            newPattern.material = patternMaterials[i];
+            newPatternGroup.add(newPattern);
 
+            // Scaling
+            const size = remap(data, 0, 100, 0.01, 0.3);
+            newPattern.scale.set(1, size, 1);
+            newPattern.applyMatrix4(
+              new THREE.Matrix4().makeTranslation(0, size / 2.0, 0)
+            );
             var scale = { x: 0.01 };
             const tween = new TWEEN.Tween(scale)
-              .to({ x: 1.0 }, 20)
+              .to({ x: 1.0 }, 150)
               .onUpdate(() => pattern.scale.set(1, scale.x, 1))
               .start();
-
+            // Rotation
             const rotationMatrix = new THREE.Matrix4();
             rotationMatrix.makeBasis(
               tangent.normalize(),
               normal.normalize(),
               bitangent.normalize()
             );
-
+            // Position
             newPatternGroup.position.copy(samplePosition);
             newPatternGroup.quaternion.setFromRotationMatrix(rotationMatrix);
             newPatternGroup.rotateOnWorldAxis(
               tangent,
               (angles[i] / 180.0) * Math.PI
             );
+            // pattern.setMatrixAt(patternCount++, patternGroup.matrix);
+            // pattern.instanceMatrix.needsUpdate = true;
           }
         }
       });
@@ -438,6 +455,8 @@ const Artwork = () => {
       mouseDown = false;
     }
 
+    function onDrag(e) {}
+
     // Arrow Helper
     var dir = new THREE.Vector3(0, 1, 0);
     //normalize the direction vector (convert to vector of length 1)
@@ -468,25 +487,43 @@ const Artwork = () => {
     playhead.scale.set(playheadSize, playheadSize, playheadSize);
     scene.add(playhead);
 
+    function onWindowResize() {
+      if (canvasWrapperRef.current) {
+        let newSize = canvasWrapperRef.current.getBoundingClientRect();
+        camera.aspect = (newSize.width + 300) / newSize.height;
+        camera.updateProjectionMatrix();
+        backgroundCamera.aspect = newSize.width / newSize.height;
+        backgroundCamera.updateProjectionMatrix();
+        renderer.setSize(newSize.width, newSize.height);
+        currentSize = newSize;
+      }
+    }
+
     function onMouseMove(e) {
-      mouse.x = ((e.clientX - size.x) / size.width) * 2 - 1;
-      mouse.y = -((e.clientY - size.y) / size.height) * 2 + 1;
+      e.preventDefault();
+
+      if (mouseDown) {
+        return;
+      }
+
+      mouse.x = ((e.clientX - currentSize.x) / currentSize.width) * 2 - 1;
+      mouse.y = -((e.clientY - currentSize.y) / currentSize.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
       var intersects = raycaster.intersectObjects(handlesGroup.children);
-      if (intersects.length > 0 && mouseDown) {
+      if (intersects.length > 0) {
+        controls.enabled = false;
+        setIsDragging(true);
         intersects[0].object.material.color.set(0xff0000);
-
-        instTubeMaterial.uniforms.uPoints.value = [
-          startPoint,
-          startHandle.position,
-          endHandle.position,
-          endPoint,
-        ];
+        intersects[0].object.scale.set(1.5, 1.5, 1.5);
       } else {
+        controls.enabled = true;
         handlesGroup.children.forEach((h) => {
-          h.material.color.set(0x000000);
+          h.material.color.set(0xffffff);
+          h.scale.set(1.0, 1.0, 1.0);
         });
+        setIsDragging(false);
+        setIsHovering(false);
       }
     }
 
@@ -544,6 +581,14 @@ const Artwork = () => {
 
       updatePlane(audioPlayProgress);
 
+      // Update bezier
+      instTubeMaterial.uniforms.uPoints.value = [
+        startPoint,
+        startHandle.position,
+        endHandle.position,
+        endPoint,
+      ];
+
       renderer.clear();
       renderer.render(backgroundScene, backgroundCamera);
       renderer.render(scene, camera);
@@ -579,9 +624,32 @@ const Artwork = () => {
     }
     render();
 
-    window.addEventListener("pointermove", onMouseMove, false);
-    window.addEventListener("pointerdown", onMouseDown, false);
-    window.addEventListener("pointerup", onMouseUp, false);
+    const pointerMoveListener = canvasRef.current.addEventListener(
+      "pointermove",
+      onMouseMove,
+      false
+    );
+    const pointerDownListener = canvasRef.current.addEventListener(
+      "pointerdown",
+      onMouseDown,
+      false
+    );
+    const pointerUpListener = canvasRef.current.addEventListener(
+      "pointerup",
+      onMouseUp,
+      false
+    );
+    const windowResizeListener = window.addEventListener(
+      "resize",
+      onWindowResize,
+      false
+    );
+
+    return () => {
+      canvasRef.current.removeEventListener("pointermove", pointerMoveListener);
+      canvasRef.current.removeEventListener("pointerdown", pointerDownListener);
+      canvasRef.current.removeEventListener("pointerup", pointerUpListener);
+    };
   }, []);
 
   return (
@@ -620,7 +688,14 @@ const Artwork = () => {
           <></>
         )}
       </div>
-      <div className="canvas-wrapper" ref={canvasWrapperRef}>
+      <div
+        className={[
+          "canvas-wrapper",
+          isHovering ? "hover" : "",
+          isDragging ? "drag" : "",
+        ].join(" ")}
+        ref={canvasWrapperRef}
+      >
         <canvas ref={canvasRef}></canvas>
       </div>
     </>
