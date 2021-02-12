@@ -7,7 +7,6 @@ const ButtonToExhibition = () => {
     <a
       className="btn-to-exhibition"
       href="https://exhibition.mixing-senses.art"
-      target="_blank"
     >
       <span className="emoji">🏛️</span>
       <span className="description">Zum Foyer</span>
