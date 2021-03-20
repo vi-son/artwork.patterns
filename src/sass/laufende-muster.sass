@@ -1,5 +1,3 @@
-/* @import ../../shared/sass/rouge/1-settings/_colors.sass
-
 #mount
 .canvas-wrapper
   width: 100vw
@@ -9,6 +7,7 @@
   position: fixed
   top: 0
   left: 0
+  cursor: grab
 
 .audio-player
   position: fixed
@@ -16,32 +15,56 @@
   bottom: 40px
 
 .freq-row
-  color: black
+  color: var(--color-darkness)
   z-index: 999
   position: fixed
-  top: 100px
-  left: 100px
-  font-family: monospace
+  top: 20px
+  left: 0
+  font-family: Space Mono
   margin: 0 auto
   display: flex
   flex-direction: column
+  width: 100vw
   .row
-    display: flex
+    font-size: 0.75rem
+    &[data-size="16"]
+      display: grid
+      grid-template-columns: auto auto repeat(16, 1fr)
+    &[data-size="32"]
+      display: grid
+      grid-template-columns: 20ch 20ch repeat(32, 1fr)
     .colored
-      color: red
-    b
-      margin-right: 10px
-      width: 5ch
-      display: inline-block
-      /* &:nth-child(2n)
-      /*   color: var(--color-curacao)
+      color: white
+      background: var(--color-curacao)
+    .threshold
+      color: var(--color-dirtysnow)
+      background: var(--color-darkness)
+      width: auto
+      text-align: left
+      padding: 5px
+    .average
+      color: var(--color-dirtysnow)
+      background: var(--color-darkness)
+      width: 20ch
+      text-align: left
+      padding: 5px
+      .text
+        width: 15ch
+    .text
+      padding: 5px
+
+.percentage
+  padding: 30px
 
 .progress-bar
-  width: 50vw
-  height: 10px
-  background: black
+  width: 100vw
+  height: 20px
+  background: var(--color-darkness-10)
   margin-bottom: 20px
-  margin-top: 10px
+  position: fixed
+  top: 0
+  left: 0
+  z-index: 999999
   .progress
-    height: 10px
-    background: red
+    height: 100%
+    background: var(--color-curacao)

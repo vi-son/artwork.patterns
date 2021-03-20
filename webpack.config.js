@@ -14,50 +14,50 @@ function getVersionFromGit() {
   return {
     tag: gitTag.trim(),
     commit: gitCommit.trim(),
-    package: package
+    package: package,
   };
 }
 
-module.exports = env => {
+module.exports = (env) => {
   console.log(`ENV: ${env.NODE_ENV} / ${env.production}`);
 
   return {
     mode: "development",
     devServer: {
       port: 8888,
-      historyApiFallback: true
+      historyApiFallback: true,
     },
     entry: {
-      index: path.resolve(__dirname, "src/js/index.js")
+      index: path.resolve(__dirname, "src/js/index.js"),
     },
     output: {
       path: path.resolve(__dirname, "build/"),
       publicPath: "/",
       filename: "[name].bundle.js",
-      chunkFilename: "[name].bundle.js"
+      chunkFilename: "[name].bundle.js",
     },
     resolve: {
       extensions: [".js"],
       alias: {
         "@sass": path.join(__dirname, "src/sass/"),
-        "@glsl": path.join(__dirname, "src/glsl/")
-      }
+        "@glsl": path.join(__dirname, "src/glsl/"),
+      },
     },
     optimization: {
       splitChunks: {
-        chunks: "all"
-      }
+        chunks: "all",
+      },
     },
     module: {
       rules: [
         {
           test: /\.js$/,
           loader: "babel-loader",
-          exclude: /node_modules/
+          exclude: /node_modules/,
         },
         {
           test: /\.s[ac]ss$/i,
-          use: ["style-loader", "css-loader", "sass-loader"]
+          use: ["style-loader", "css-loader", "sass-loader"],
         },
         {
           test: /\.(woff(2)?|ttf|otf|eot)(\?v=\d+\.\d+\.\d+)?$/,
@@ -66,31 +66,31 @@ module.exports = env => {
               loader: "file-loader",
               options: {
                 name: "[name].[ext]",
-                outputPath: "fonts/"
-              }
-            }
-          ]
+                outputPath: "fonts/",
+              },
+            },
+          ],
         },
         {
           test: /\.(glsl|frag|vert)$/,
           use: ["glslify-import-loader", "raw-loader", "glslify-loader"],
-          exclude: /node_modules/
+          exclude: /node_modules/,
         },
         {
           test: /\.svg$/,
           use: [
             {
-              loader: "babel-loader"
+              loader: "babel-loader",
             },
             {
               loader: "react-svg-loader",
               options: {
-                jsx: true // true outputs JSX tags
-              }
-            }
-          ]
-        }
-      ]
+                jsx: true, // true outputs JSX tags
+              },
+            },
+          ],
+        },
+      ],
     },
     plugins: [
       new webpack.DefinePlugin({
@@ -98,14 +98,16 @@ module.exports = env => {
         "process.env.VERSION": JSON.stringify(getVersionFromGit()),
         "process.env.TRACKS": JSON.stringify(
           fs
-            .readdirSync(path.resolve(__dirname, "assets/audio/patterns/"))
-            .filter(e => e !== ".DS_Store")
-        )
+            .readdirSync(
+              path.resolve(__dirname, "assets/audio/patterns.frequencies/")
+            )
+            .filter((e) => e !== ".DS_Store")
+        ),
       }),
       new HtmlWebpackPlugin({
         template: __dirname + "/src/html/index.html",
         filename: "index.html",
-        inject: "body"
+        inject: "body",
       }),
       new FaviconsWebpackPlugin(
         path.resolve(`${__dirname}/assets/svg/favicon.svg`)
@@ -118,11 +120,11 @@ module.exports = env => {
         runtimeCaching: [
           {
             urlPattern: new RegExp("http://localhost:1234/*.js"),
-            handler: "StaleWhileRevalidate"
-          }
+            handler: "StaleWhileRevalidate",
+          },
         ],
-        maximumFileSizeToCacheInBytes: 15000000
-      })
-    ]
+        maximumFileSizeToCacheInBytes: 15000000,
+      }),
+    ],
   };
 };
