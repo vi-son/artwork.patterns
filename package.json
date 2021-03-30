@@ -58,6 +58,7 @@
     "workbox-webpack-plugin": "^6.1.2"
   },
   "dependencies": {
-    "@vi.son/components": "^0.0.6"
+    "@vi.son/components": "^0.0.6",
+    "favicons": "^6.2.1"
   }
 }
