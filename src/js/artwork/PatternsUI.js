@@ -4,7 +4,7 @@ import ReactDOM from "react-dom";
 // Local imports
 import Patterns from "./Patterns.js";
 // Style imports
-import "@sass/laufende-muster.sass";
+import "@sass/patterns.sass";
 
 const PatternsUI = ({ paused }) => {
   const [patterns, setPatterns] = useState(null);

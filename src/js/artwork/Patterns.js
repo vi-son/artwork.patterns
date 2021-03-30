@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { DragControls } from "three/examples/jsm/controls/DragControls.js";
+import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import TWEEN from "@tweenjs/tween.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import * as dat from "dat.gui";
@@ -12,6 +13,8 @@ import backgroundVS from "@glsl/background.vert.glsl";
 import backgroundFS from "@glsl/background.frag.glsl";
 import tubeVS from "@glsl/tubes.vert.glsl";
 import tubeFS from "@glsl/tubes.frag.glsl";
+import patternVS from "@glsl/plane.vert.glsl";
+import patternFS from "@glsl/plane.frag.glsl";
 
 const remap = (v, a, b, c, d) => {
   const newval = ((v - a) / (b - a)) * (d - c) + c;
@@ -82,6 +85,117 @@ class Patterns {
     this._loadSounds();
   }
 
+  _buildInstanceGeometries() {
+    // Patterns geometries
+    const color = this._colors[parseInt(Math.random() * this._colors.length)];
+    const patternMaterial = new THREE.ShaderMaterial({
+      vertexShader: patternVS,
+      fragmentShader: patternFS,
+      uniforms: {
+        uColor: { value: color },
+      },
+      side: THREE.DoubleSide,
+      transparent: true,
+      depthWrite: false,
+    });
+    const COUNT = 30;
+    const geometries = [];
+    let matrix = new THREE.Matrix4();
+    let position = new THREE.Vector3();
+    const rotationMatrix = new THREE.Matrix4();
+    let rotation = new THREE.Euler(0, 0, 0, "XYZ");
+    let quaternion = new THREE.Quaternion();
+    let scale = new THREE.Vector3(1, 1, 1);
+
+    let instanceGeometry;
+
+    const randomIndex = parseInt(Math.random() * 3);
+    console.log(randomIndex);
+
+    for (let i = 0; i < COUNT; i++) {
+      if (randomIndex === 0) {
+        instanceGeometry = new THREE.PlaneBufferGeometry(0.1, 2.0, 1);
+      }
+      if (randomIndex === 1) {
+        instanceGeometry = new THREE.BoxBufferGeometry(0.05, 0.1, 0.05);
+      }
+      if (randomIndex === 2) {
+        instanceGeometry = new THREE.SphereGeometry(0.1, 10, 10);
+      }
+      // instanceGeometry.translate(0.025, 0.0, 0.025);
+      const samplePosition = sample(
+        this._startSphere.position,
+        this._startHandle.position,
+        this._endHandle.position,
+        this._endSphere.position,
+        i / COUNT
+      );
+      const basis = calculateFrame(
+        this._startSphere.position,
+        this._startHandle.position,
+        this._endHandle.position,
+        this._endSphere.position,
+        i / COUNT
+      );
+
+      // Rotation
+      const { tangent, normal, bitangent } = basis;
+      rotationMatrix.makeBasis(
+        tangent.normalize(),
+        normal.normalize(),
+        bitangent.normalize()
+      );
+
+      rotation.set(0, 0, 0);
+      quaternion.setFromRotationMatrix(rotationMatrix);
+      matrix.compose(position, quaternion, scale);
+      const yScale = Math.random() * 0.5;
+      instanceGeometry.setAttribute(
+        "scale",
+        new THREE.Float32BufferAttribute(
+          new Array(instanceGeometry.getAttribute("position").count)
+            .fill(0)
+            .map(() => [yScale, yScale, yScale])
+            .reduce((a, v) => a.concat(v)),
+          3
+        ).setUsage(THREE.DynamicDrawUsage)
+      );
+      instanceGeometry.setAttribute(
+        "translation",
+        new THREE.Float32BufferAttribute(
+          new Array(instanceGeometry.getAttribute("position").count)
+            .fill(0)
+            .map(() => [
+              samplePosition.x,
+              0.05 + samplePosition.y,
+              samplePosition.z,
+            ])
+            .reduce((a, v) => a.concat(v)),
+          3
+        ).setUsage(THREE.DynamicDrawUsage)
+      );
+
+      instanceGeometry.setAttribute(
+        "rotation",
+        new THREE.Float32BufferAttribute(
+          new Array(instanceGeometry.getAttribute("position").count)
+            .fill(0)
+            .map(() => [quaternion.x, quaternion.y, quaternion.z, quaternion.w])
+            .reduce((a, v) => a.concat(v)),
+          4
+        ).setUsage(THREE.DynamicDrawUsage)
+      );
+      // instanceGeometry.applyMatrix4(matrix);
+      geometries.push(instanceGeometry);
+    }
+    const patternsGeometry = BufferGeometryUtils.mergeBufferGeometries(
+      geometries
+    );
+    const mesh = new THREE.Mesh(patternsGeometry, patternMaterial);
+    console.log("GEOMETRY", patternsGeometry);
+    this._scene.add(mesh);
+  }
+
   _init() {
     // Scene
     this._scene = new THREE.Scene();
@@ -101,6 +215,14 @@ class Patterns {
       0.1,
       100
     );
+    // this._camera = new THREE.OrthographicCamera(
+    //   this._size.width / -500,
+    //   this._size.width / +500,
+    //   this._size.height / +500,
+    //   this._size.height / -500,
+    //   -1000,
+    //   +1000
+    // );
     this._camera.position.set(0, 3, -2);
     // Controls
     this._controls = new OrbitControls(this._camera, this._renderer.domElement);
@@ -112,6 +234,11 @@ class Patterns {
     this._pointerMoveListener = this._canvas.addEventListener(
       "pointermove",
       this.handlePointerMove.bind(this),
+      false
+    );
+    this._keyUpListener = document.addEventListener(
+      "keyup",
+      this.handleKeyUp.bind(this),
       false
     );
     this._pointerDownListener = this._canvas.addEventListener(
@@ -162,32 +289,31 @@ class Patterns {
     this._startPoint = new THREE.Vector3(-1, 0, 0);
     this._endPoint = new THREE.Vector3(+1, 0, 0);
 
-    // Play head
-    const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const boxMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    this._playhead = new THREE.Mesh(boxGeometry, boxMaterial);
-    const playheadSize = 0.05;
-    this._playhead.scale.set(playheadSize, playheadSize, playheadSize);
-    this._scene.add(this._playhead);
-
     // Geometry
     this._handlesGroup = new THREE.Group();
     const geometry = new THREE.SphereGeometry(0.02, 32, 32);
     const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const handleMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const startSphere = new THREE.Mesh(geometry, material);
-    startSphere.position.copy(this._startPoint);
-    const endSphere = new THREE.Mesh(geometry, material);
-    endSphere.position.copy(this._endPoint);
-    this._scene.add(startSphere);
-    this._scene.add(endSphere);
+    const handleMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      flatShading: true,
+    });
+    this._startSphere = new THREE.Mesh(geometry.clone(), material.clone());
+    this._startSphere.position.copy(this._startPoint);
+    this._endSphere = new THREE.Mesh(geometry, material);
+    this._endSphere.position.copy(this._endPoint);
+    this._scene.add(this._startSphere);
+    this._scene.add(this._endSphere);
+    this._handlesGroup.add(this._startSphere);
+    this._handlesGroup.add(this._endSphere);
 
-    const handleGeometry = new THREE.BoxGeometry(0.025, 0.025, 0.025);
+    const handleGeometry = new THREE.OctahedronGeometry(0.025, 0);
     this._startHandle = new THREE.Mesh(handleGeometry, handleMaterial);
     const startHandlePosition = this._startPoint.clone().divideScalar(2.0);
     startHandlePosition.y = 1.0;
     startHandlePosition.z = 0.75;
     this._startHandle.position.copy(startHandlePosition);
+    this._startHandle.scale.set(0.5, 3, 0.5);
+    this._startHandle.lookAt(this._startPoint);
     this._handlesGroup.add(this._startHandle);
 
     this._endHandle = new THREE.Mesh(handleGeometry, handleMaterial.clone());
@@ -198,16 +324,40 @@ class Patterns {
     this._handlesGroup.add(this._endHandle);
 
     const dragControls = new DragControls(
-      [this._startHandle, this._endHandle],
+      [this._startHandle, this._endHandle, this._startSphere, this._endSphere],
       this._camera,
       this._renderer.domElement
     );
-    dragControls.addEventListener("drag", () => {});
+    dragControls.addEventListener("drag", () => {
+      this._instTubeMaterial.uniforms.uPoints.value = [
+        this._startSphere.position,
+        this._startHandle.position,
+        this._endHandle.position,
+        this._endSphere.position,
+      ];
+      var samplePosition = sample(
+        this._startSphere.position,
+        this._startHandle.position,
+        this._endHandle.position,
+        this._endSphere.position,
+        this._audioPlayProgress
+      );
+      this._playhead.position.copy(samplePosition);
+      const boundingBox = new THREE.Box3().setFromPoints([
+        this._startSphere.position,
+        this._startHandle.position,
+        this._endHandle.position,
+        this._endSphere.position,
+      ]);
+      const center = new THREE.Vector3();
+      boundingBox.getCenter(center);
+      console.log(center);
+    });
     this._dragGroup = new THREE.Group();
     this._scene.add(this._handlesGroup);
-    var handleLinesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+    var handleLinesMaterial = new THREE.LineBasicMaterial({ color: 0x7a7a7a });
     var points = [];
-    points.push(this._startPoint);
+    points.push(this._startSphere.position);
     points.push(startHandlePosition);
     var startHandleLinesGeometry = new THREE.BufferGeometry().setFromPoints(
       points
@@ -228,6 +378,48 @@ class Patterns {
       handleLinesMaterial
     );
     this._scene.add(this._endHandleLine);
+
+    // Play head
+    this._playhead = new THREE.Group();
+
+    const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const boxMaterial = new THREE.MeshBasicMaterial({ color: 0x2b13ff });
+    const playheadMesh = new THREE.Mesh(boxGeometry, boxMaterial);
+    const playheadSize = 0.05;
+    playheadMesh.scale.set(playheadSize, playheadSize, playheadSize);
+
+    const samplePosition = sample(
+      this._startSphere.position,
+      this._startHandle.position,
+      this._endHandle.position,
+      this._endSphere.position,
+      this._audioPlayProgress
+    );
+    this._playhead.position.copy(samplePosition);
+    this._playhead.add(playheadMesh);
+    this._scene.add(this._playhead);
+
+    // Arrow Helper
+    const dir = new THREE.Vector3(0, 1, 0);
+    // normalize the direction vector (convert to vector of length 1)
+    dir.normalize();
+    const origin = new THREE.Vector3(0, 0, 0);
+    const length = 0.2;
+    const hexN = 0xff0000;
+    const hexT = 0x00ff00;
+    const hexBT = 0x0000ff;
+    // Arrow Helper
+    this._arrowHelperNormal = new THREE.ArrowHelper(dir, origin, length, hexN);
+    this._arrowHelperTangent = new THREE.ArrowHelper(dir, origin, length, hexT);
+    this._arrowHelperBitangent = new THREE.ArrowHelper(
+      dir,
+      origin,
+      length,
+      hexBT
+    );
+    this._playhead.add(this._arrowHelperNormal);
+    this._playhead.add(this._arrowHelperTangent);
+    this._playhead.add(this._arrowHelperBitangent);
 
     // Pattern groups
     const patternGroups = this._angles.map((a, i) => {
@@ -276,28 +468,6 @@ class Patterns {
     const tubeMesh = new THREE.Mesh(tubeGeometry, this._instTubeMaterial);
     tubeMesh.frustumCulled = false;
     this._scene.add(tubeMesh);
-
-    // Arrow Helper
-    const dir = new THREE.Vector3(0, 1, 0);
-    // normalize the direction vector (convert to vector of length 1)
-    dir.normalize();
-    const origin = new THREE.Vector3(0, 0, 0);
-    const length = 0.2;
-    const hexN = 0xff0000;
-    const hexT = 0x00ff00;
-    const hexBT = 0x0000ff;
-    // Arrow Helper
-    this._arrowHelperNormal = new THREE.ArrowHelper(dir, origin, length, hexN);
-    this._scene.add(this._arrowHelperNormal);
-    this._arrowHelperTangent = new THREE.ArrowHelper(dir, origin, length, hexT);
-    this._scene.add(this._arrowHelperTangent);
-    this._arrowHelperBitangent = new THREE.ArrowHelper(
-      dir,
-      origin,
-      length,
-      hexBT
-    );
-    this._scene.add(this._arrowHelperBitangent);
   }
 
   _initRaycasting() {
@@ -321,8 +491,8 @@ class Patterns {
     // create a global audio source
     // load a sound and set it as the Audio object's buffer
     var audioLoader = new THREE.AudioLoader(this._loadingManager);
-    let audioDuration = 0;
-    this._audioPlayProgress = 0;
+    this._audioDuration = 0;
+    this._audioPlayProgress = 0.01;
 
     // Audio analyze
     // Audio debug helper
@@ -341,15 +511,12 @@ class Patterns {
       audioLoader.load(
         `/assets/audio/patterns.frequencies/${track}`,
         (buffer) => {
-          audioDuration = buffer.duration;
+          this._audioDuration = buffer.duration;
           this._sounds[i].setBuffer(buffer);
           this._sounds[i].setLoop(false);
           this._sounds[i].setVolume(1.0);
-          this._sounds[i].play();
         },
-        (xhr) => {
-          console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
-        }
+        (xhr) => {}
       );
     });
     // After loading all sounds
@@ -378,18 +545,25 @@ class Patterns {
           this._scene.add(freqHelperQuad);
         });
       });
-      this._allLoaded = true;
+    };
+
+    this._loadingManager.onProgress = (url, loaded, total) => {
+      console.log((loaded / total) * 100 + "% loaded");
+      if (loaded / total >= 1.0) {
+        this._allLoaded = true;
+        this.continue();
+        console.log("All sounds loaded... playing", this._sounds);
+      }
     };
   }
 
   _processAudio() {
-    return;
     // Get the average frequency of the sound
     // let avgCopy = [...avgFreqData];
-    // this._analysers.forEach((a, i) => {
-    //   const freq = a.getAverageFrequency();
-    //   avgCopy[i] = freq;
-    // });
+    this._analysers.forEach((a, i) => {
+      const freq = a.getAverageFrequency();
+      // avgCopy[i] = freq;
+    });
     // setAvgFreqData(avgCopy);
 
     let copy = [...this._freqData];
@@ -397,17 +571,17 @@ class Patterns {
       const freqData = a.getFrequencyData();
       let data = 0;
       var samplePosition = sample(
-        this._startPoint,
+        this._startSphere.position,
         this._startHandle.position,
         this._endHandle.position,
-        this._endPoint,
+        this._endSphere.position,
         this._audioPlayProgress
       );
       const basis = calculateFrame(
-        this._startPoint,
+        this._startSphere.position,
         this._startHandle.position,
         this._endHandle.position,
-        this._endPoint,
+        this._endSphere.position,
         this._audioPlayProgress
       );
 
@@ -415,23 +589,26 @@ class Patterns {
       for (var j = 0; j < this._freqData.length; j++) {
         this._audioFreqHelperArray[i][j].scale.set(
           1,
-          Math.log(this._freqData[j]) / 3.0,
+          Math.max(0.01, Math.log(this._freqData[j]) / 3.0),
           1
         );
-        copy[i][j] = freqData[j];
+        if (this._freqData[i]) {
+          copy[i][j] = this._freqData[j];
+        }
       }
 
       if (this._$f % 60 === 0) {
-        data = freqData[this._freqIndex];
+        data = this._freqData[this._freqIndex];
         const size = remap(data, 0, 200, 0.01, 1);
-        if (data > this._thresholds[i]) {
-          this._patternGroups[i].addPattern(
-            this._scene,
-            size,
-            samplePosition,
-            basis
-          );
-        }
+
+        // if (data > this._thresholds[i]) {
+        //   this._patternGroups[i].addPattern(
+        //     this._scene,
+        //     size,
+        //     samplePosition,
+        //     basis
+        //   );
+        // }
       }
     });
     // setFreqData(copy);
@@ -440,17 +617,17 @@ class Patterns {
   _updatePlane(t) {
     // Update normals
     const samplePosition = sample(
-      this._startPoint,
+      this._startSphere.position,
       this._startHandle.position,
       this._endHandle.position,
-      this._endPoint,
+      this._endSphere.position,
       t
     );
     const { normal, bitangent, tangent } = calculateFrame(
-      this._startPoint,
+      this._startSphere.position,
       this._startHandle.position,
       this._endHandle.position,
-      this._endPoint,
+      this._endSphere.position,
       t
     );
 
@@ -468,12 +645,19 @@ class Patterns {
       bitangent.normalize()
     );
 
-    this._playhead.position.copy(samplePosition);
-    this._playhead.quaternion.setFromRotationMatrix(rotationMatrix);
+    // this._playhead.position.copy(samplePosition);
+    // this._playhead.quaternion.setFromRotationMatrix(rotationMatrix);
 
     if (this._controls) {
       this._controls.target.copy(samplePosition);
       this._controls.update();
+    }
+  }
+
+  handleKeyUp(e) {
+    console.log(e);
+    if (e.key === "e") {
+      this._buildInstanceGeometries();
     }
   }
 
@@ -512,7 +696,7 @@ class Patterns {
     if (intersects.length > 0) {
       this._controls.enabled = false;
       // setIsDragging(true);
-      intersects[0].object.material.color.set(0xff0000);
+      intersects[0].object.material.color.set(0xe8534f);
       intersects[0].object.scale.set(1.5, 1.5, 1.5);
     } else {
       this._controls.enabled = true;
@@ -527,7 +711,7 @@ class Patterns {
 
   handleResize() {
     let newSize = this._canvasWrapper.getBoundingClientRect();
-    this._camera.aspect = (newSize.width + 300) / newSize.height;
+    this._camera.aspect = newSize.width / newSize.height;
     this._camera.updateProjectionMatrix();
     this._backgroundCamera.aspect = newSize.width / newSize.height;
     this._backgroundCamera.updateProjectionMatrix();
@@ -554,22 +738,24 @@ class Patterns {
     // this._updatePlane(this._audioPlayProgress);
 
     // Update bezier
-    this._instTubeMaterial.uniforms.uPoints.value = [
-      this._startPoint,
-      this._startHandle.position,
-      this._endHandle.position,
-      this._endPoint,
-    ];
-
     this._renderer.clear();
     this._renderer.render(this._backgroundScene, this._backgroundCamera);
     this._renderer.render(this._scene, this._camera);
 
     const { x, y, z } = this._startHandle.position;
+    this._startHandleLine.geometry.attributes.position.array[0] = this._startSphere.position.x;
+    this._startHandleLine.geometry.attributes.position.array[1] = this._startSphere.position.y;
+    this._startHandleLine.geometry.attributes.position.array[2] = this._startSphere.position.z;
+
     this._startHandleLine.geometry.attributes.position.array[3] = x;
     this._startHandleLine.geometry.attributes.position.array[4] = y;
     this._startHandleLine.geometry.attributes.position.array[5] = z;
+
     this._startHandleLine.geometry.attributes.position.needsUpdate = true;
+
+    this._endHandleLine.geometry.attributes.position.array[0] = this._endSphere.position.x;
+    this._endHandleLine.geometry.attributes.position.array[1] = this._endSphere.position.y;
+    this._endHandleLine.geometry.attributes.position.array[2] = this._endSphere.position.z;
 
     this._endHandleLine.geometry.attributes.position.array[3] = this._endHandle.position.x;
     this._endHandleLine.geometry.attributes.position.array[4] = this._endHandle.position.y;
@@ -585,10 +771,10 @@ class Patterns {
       const t = this._audioListener.context.currentTime;
       this._audioPlayProgress = t / this._audioDuration;
       // setProgress(audioPlayProgress); // @TODO
-      // this._processAudio();
+      this._processAudio();
     }
     if (this._allLoaded) {
-      // this._processAudio();
+      this._processAudio();
     }
 
     if (this._stats !== undefined) this._stats.update();

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 // Local imports
 import { get } from "./api.js";
+import { ExhibitionLayout } from "@vi.son/components";
 import { Narrative } from "@vi.son/components";
 import { ButtonCloseNarrative } from "@vi.son/components";
 import { ButtonOpenNarrative } from "@vi.son/components";
@@ -9,6 +10,8 @@ import { ButtonToExhibition } from "@vi.son/components";
 import PatternsUI from "./artwork/PatternsUI.js";
 // Style imports
 import "../sass/index.sass";
+
+console.log(process.env.NODE_ENV);
 
 const Artwork = () => {
   const [showNarrative, setShowNarrative] = useState(false);
@@ -25,25 +28,36 @@ const Artwork = () => {
   }, []);
 
   return (
-    <>
-      <div className="canvas-wrapper">
-        <PatternsUI paused={showNarrative} />
-        <ButtonOpenNarrative
-          showNarrative={showNarrative}
-          setShowNarrative={setShowNarrative}
-        />
-      </div>
-      <ButtonToExhibition />
-      <ButtonCloseNarrative
-        showNarrative={showNarrative}
-        setShowNarrative={setShowNarrative}
-      />
-      <Narrative
-        show={showNarrative}
-        version={process.env.VERSION}
-        content={content}
-      />
-    </>
+    <ExhibitionLayout
+      showAside={showNarrative}
+      fixed={
+        <div className="canvas-wrapper">
+          <PatternsUI paused={showNarrative} />
+        </div>
+      }
+      content={
+        <>
+          <ButtonToExhibition />
+          <ButtonOpenNarrative
+            showNarrative={showNarrative}
+            setShowNarrative={setShowNarrative}
+          />
+        </>
+      }
+      aside={
+        <>
+          <ButtonCloseNarrative
+            showNarrative={showNarrative}
+            setShowNarrative={setShowNarrative}
+          />
+          <Narrative
+            show={showNarrative}
+            version={process.env.VERSION}
+            content={content}
+          />
+        </>
+      }
+    />
   );
 };
 
