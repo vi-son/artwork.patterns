@@ -30,7 +30,6 @@ $font-root: "@vi.son/rouge/fonts"
 @import @vi.son/rouge/5-objects/_btn.sass
 @import @vi.son/rouge/5-objects/_emoji.sass
 
-
 .canvas-wrapper
   width: 100vw
   height: 100vh
@@ -46,6 +45,17 @@ $font-root: "@vi.son/rouge/fonts"
     position: fixed
     bottom: 60px
     left: calc(100vw - 200px)
+    pointer-events: all
     +until($desktops)
       top: 0px
       left: calc(100vw - 60px - 30px)
+
+  .btn-to-exhibition
+    pointer-events: all
+
+
+  .btn-set-bezier
+    align-self: flex-end
+    margin-bottom: 80px
+    .btn
+      box-shadow: 0 10px 30px var(--color-ultradark-5)

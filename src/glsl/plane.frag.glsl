@@ -1,8 +1,26 @@
+precision highp float;
+
+#pragma glslify: rand = require("./rand.glsl")
+#pragma glslify: noise = require("./noise.glsl")
+#pragma glslify: grain = require("./grain.glsl")
+
+uniform int uFrame;
+uniform float uCount;
+uniform float uProgress;
+uniform vec2 uResolution;
 uniform vec3 uColor;
+uniform sampler2D uAudioDataTexture;
 
 varying vec2 vUV;
+varying float vIndex;
 
 void main() {
-  gl_FragColor = vec4(uColor, 1.0 - vUV.y);
-  // gl_FragColor = vec4(uColor, 1.0);
+  vec3 color = uColor;
+
+  float amount = 0.5;
+  vec2 uvRandom = vUV;
+  uvRandom.y *= grain(vec2(uvRandom.y, amount));
+  color.rgb += grain(uvRandom) * 0.1;
+
+  gl_FragColor = vec4(color, pow(1.0 - vUV.y, 2.0));
 }

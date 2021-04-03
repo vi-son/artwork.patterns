@@ -1,19 +1,7 @@
+#pragma glslify: rand = require("./rand.glsl")
 #pragma glslify: pillow = require("./pillow.glsl")
-
-float rand(vec2 n) { 
-	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
-}
-
-float noise(vec2 p){
-	vec2 ip = floor(p);
-	vec2 u = fract(p);
-	u = u*u*(3.0-2.0*u);
-	
-	float res = mix(
-		mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
-		mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
-	return res*res;
-}
+#pragma glslify: noise = require("./noise.glsl")
+#pragma glslify: grain = require("./grain.glsl")
 
 uniform vec2 uResolution;
 
@@ -27,6 +15,11 @@ void main() {
   vec2 gamma = vec2(6.0);
 
   color = pillow(color_a, color_b, gamma, uv).rgb + rand(uv * 100.0) / 100.0;
+
+  float amount = 0.5;
+  vec2 uvRandom = uv;
+  uvRandom.y *= grain(vec2(uvRandom.y, amount));
+  color.rgb += grain(uvRandom) * 0.05;
 
   gl_FragColor = vec4(color, 1.0);
 }

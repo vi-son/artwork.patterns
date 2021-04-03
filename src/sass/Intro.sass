@@ -1,0 +1,46 @@
+@import @vi.son/rouge/1-settings/_colors.sass
+@import @vi.son/rouge/1-settings/_breakpoints.sass
+@import @vi.son/rouge/2-tools/_media-queries.sass
+@import @vi.son/rouge/2-tools/_animations.sass
+
+.intro
+  display: flex
+  flex-direction: column
+  justify-content: center
+  flex-grow: 1
+  align-self: center
+  +until($tablets)
+    margin: 0 20px
+  +from($tablets)
+    max-width: 60ch
+  +from($desktops)
+    max-width: 80ch
+  animation: fade-in-down 1s 1.5s ease
+  animation-fill-mode: both
+  transform: translateY(-200px)
+
+  .content
+    padding: 60px auto
+    display: flex
+    flex-direction: column
+
+    .heading
+      margin-bottom: 40px
+
+    .btn-start
+      text-align: center
+      flex-grow: 0
+      pointer-events: all
+      opacity: 0
+      transform: translateY(50px)
+      animation: fade-in-up 1s 2s ease
+      animation-fill-mode: both
+      background-color: var(--color-curacao)
+      color: var(--color-snow)
+      box-shadow: 0 10px 10px var(--color-ultradark-5)
+      transition: background 500ms ease, color 500ms ease
+      &:hover
+        background-color: var(--color-snow)
+        color: var(--color-curacao)
+        box-shadow: 0 30px 50px var(--color-ultradark-5)
+        
