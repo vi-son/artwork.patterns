@@ -57,7 +57,7 @@ class Patterns {
     this._clock = new THREE.Clock();
     this._$t = this._clock.getElapsedTime();
     this._$f = 0;
-    this._TRACK_INDEX = 1;
+    this._TRACK_INDEX = 0;
 
     this._freqIndex = 3;
     this._threshholds = [10, 10, 10, 10, 10];
@@ -74,6 +74,7 @@ class Patterns {
     if (process.env.NODE_ENV === "development") {
       // Stats
       this._stats = new Stats();
+      this._stats.dom.className = "stats";
       document.body.appendChild(this._stats.dom);
       // Gui
       this._gui = new dat.GUI();
@@ -86,12 +87,10 @@ class Patterns {
     this._initGeometry();
     this._initRaycasting();
     this._loadSounds();
-
-    this._setupAudioAnalysis();
   }
 
   _setupAudioAnalysis() {
-    this._renderTargetSize = new THREE.Vector2(2048, 10);
+    this._renderTargetSize = new THREE.Vector2(128, 128);
     this._renderTargets = [0, 1].map(
       () =>
         new THREE.WebGLRenderTarget(
@@ -102,7 +101,7 @@ class Patterns {
             wrapT: THREE.RepeatWrapping,
             minFilter: THREE.NearestFilter,
             magFilter: THREE.NearestFilter,
-            format: THREE.RGBFormat,
+            format: THREE.RGBAFormat,
             type: THREE.FloatType,
             stencilBuffer: false,
           }
@@ -153,7 +152,7 @@ class Patterns {
 
   _buildInstanceGeometries() {
     // Patterns geometries
-    const COUNT = this._renderTargetSize.x;
+    const COUNT = Math.ceil(this._audioDuration) * 30;
     const color = this._colors[parseInt(Math.random() * this._colors.length)];
     this._patternMaterial = new THREE.ShaderMaterial({
       vertexShader: patternVS,
@@ -161,6 +160,7 @@ class Patterns {
       uniforms: {
         uFrame: { value: 0 },
         uColor: { value: color },
+        uSampleCount: { value: Math.ceil(this._audioDuration) * 60 },
         uCount: { value: COUNT },
         uProgress: { value: 0.0 },
         uResolution: {
@@ -179,7 +179,6 @@ class Patterns {
     let matrix = new THREE.Matrix4();
     let position = new THREE.Vector3();
     const rotationMatrix = new THREE.Matrix4();
-    let rotation = new THREE.Euler(0, 0, 0, "XYZ");
     let quaternion = new THREE.Quaternion();
     let scale = new THREE.Vector3(1, 1, 1);
 
@@ -190,7 +189,7 @@ class Patterns {
 
     for (let i = 0; i < COUNT; i++) {
       // if (randomIndex === 0) {
-      instanceGeometry = new THREE.PlaneBufferGeometry(0.1, 1.0, 1);
+      instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 1.0, 1);
       instanceGeometry.translate(0, 0.5, 0);
       // }
       // if (randomIndex === 1) {
@@ -199,7 +198,6 @@ class Patterns {
       // if (randomIndex === 2) {
       //   instanceGeometry = new THREE.SphereGeometry(0.1, 10, 10);
       // }
-      // instanceGeometry.translate(0.025, 0.0, 0.025);
       const samplePosition = sample(
         this._startSphere.position,
         this._startHandle.position,
@@ -223,9 +221,14 @@ class Patterns {
         bitangent.normalize()
       );
 
-      rotation.set(0, 0, 0);
-      quaternion.setFromRotationMatrix(rotationMatrix);
-      matrix.compose(position, quaternion, scale);
+      // const offsetRotationMatrix = new THREE.Matrix4();
+      // offsetRotationMatrix.makeRotationX(
+      //   Math.sin((i / COUNT) * Math.PI * 20.0) * 0.2
+      // );
+      // quaternion.setFromRotationMatrix(offsetRotationMatrix);
+      // matrix.compose(position, quaternion, scale);
+      // instanceGeometry.applyMatrix4(matrix);
+
       const yScale = 1.0;
       instanceGeometry.setAttribute(
         "scale",
@@ -252,6 +255,7 @@ class Patterns {
         ).setUsage(THREE.DynamicDrawUsage)
       );
 
+      quaternion.setFromRotationMatrix(rotationMatrix);
       instanceGeometry.setAttribute(
         "rotation",
         new THREE.Float32BufferAttribute(
@@ -273,7 +277,6 @@ class Patterns {
           3
         ).setUsage(THREE.DynamicDrawUsage)
       );
-      // instanceGeometry.applyMatrix4(matrix);
       geometries.push(instanceGeometry);
     }
     const patternsGeometry = BufferGeometryUtils.mergeBufferGeometries(
@@ -580,7 +583,7 @@ class Patterns {
     // load a sound and set it as the Audio object's buffer
     var audioLoader = new THREE.AudioLoader(this._loadingManager);
     this._audioDuration = 0;
-    this._audioPlayProgress = 0.01;
+    this._audioPlayProgress = 0.0;
 
     // Audio analyze
     // Audio debug helper
@@ -599,7 +602,7 @@ class Patterns {
       .map(() => new THREE.Audio(this._audioListener));
     this._audioTracks.map((track, i) => {
       audioLoader.load(
-        `/assets/audio/patterns.frequencies/${track}`,
+        `/assets/audio/patterns.instruments/${track}`,
         (buffer) => {
           console.log("Audio Buffer", buffer);
           console.log(
@@ -610,6 +613,7 @@ class Patterns {
           this._sounds[i].setBuffer(buffer);
           this._sounds[i].setLoop(false);
           this._sounds[i].setVolume(1.0);
+          this._setupAudioAnalysis();
         },
         (xhr) => {}
       );
@@ -755,10 +759,15 @@ class Patterns {
       this._playhead.quaternion.setFromRotationMatrix(rotationMatrix);
     }
 
-    if (this._controls) {
-      this._controls.target.copy(samplePosition);
-      this._controls.update();
-    }
+    // if (
+    //   this._controls &&
+    //   samplePosition.x !== NaN &&
+    //   samplePosition.y !== NaN &&
+    //   samplePosition.z !== NaN
+    // ) {
+    //   this._controls.target.copy(samplePosition);
+    //   this._controls.update();
+    // }
   }
 
   handleKeyUp(e) {
@@ -833,8 +842,7 @@ class Patterns {
   continue() {
     this._renderer.setAnimationLoop(this._renderLoop.bind(this));
     this._clock.start();
-    // this._sounds.map((s) => s.play());
-    this._sounds[this._TRACK_INDEX].play();
+    this._sounds.map((s) => s.play());
     this._$f = 0;
   }
 
@@ -846,20 +854,24 @@ class Patterns {
       this._avgFreqData[this._TRACK_INDEX] = this._analysers[
         this._TRACK_INDEX
       ].getAverageFrequency();
-      this._audioAnalysisBufferMaterial.uniforms.uAverageFrequency.value = this._avgFreqData[
-        this._TRACK_INDEX
-      ];
-      this._audioAnalysisBufferMaterial.uniforms.uFrame.value = this._$f;
+      if (this._audioAnalysisBufferMaterial) {
+        this._audioAnalysisBufferMaterial.uniforms.uAverageFrequency.value = this._avgFreqData[
+          this._TRACK_INDEX
+        ];
+        this._audioAnalysisBufferMaterial.uniforms.uFrame.value = this._$f;
+      }
     }
 
-    this._renderer.setRenderTarget(this._renderTargets[(this._$f + 1) % 2]);
-    this._renderer.render(this._audioScene, this._audioCamera);
-    this._renderer.setRenderTarget(null);
+    if (this._renderTargets) {
+      this._renderer.setRenderTarget(this._renderTargets[(this._$f + 1) % 2]);
+      this._renderer.render(this._audioScene, this._audioCamera);
+      this._renderer.setRenderTarget(null);
 
-    if (this._$f % 2 === 0) {
-      this._audioAnalysisBufferMaterial.uniforms.uTexture.value = this._renderTargets[1].texture;
-    } else {
-      this._audioAnalysisBufferMaterial.uniforms.uTexture.value = this._renderTargets[0].texture;
+      if (this._$f % 2 === 0) {
+        this._audioAnalysisBufferMaterial.uniforms.uTexture.value = this._renderTargets[1].texture;
+      } else {
+        this._audioAnalysisBufferMaterial.uniforms.uTexture.value = this._renderTargets[0].texture;
+      }
     }
 
     // this._updatePlane(this._audioPlayProgress);

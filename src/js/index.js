@@ -52,7 +52,7 @@ const Artwork = () => {
       }
       content={
         <>
-          {/* {state === PATTERNS_STATES.INIT ? <Intro /> : <></>} */}
+          {state === PATTERNS_STATES.INIT ? <Intro /> : <></>}
           {state === PATTERNS_STATES.BEZIER_SETUP ? (
             <ButtonEmoji
               className="btn-set-bezier"

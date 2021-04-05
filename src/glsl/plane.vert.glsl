@@ -11,6 +11,7 @@ uniform sampler2D uAudioDataTexture;
 
 varying vec2 vUV;
 varying float vIndex;
+varying float vAudioData;
 
 highp mat4 rotationMatrix(highp vec3 n, highp float theta) {
   // Using Rodrigues' formula, find a matrix which performs a rotation
@@ -38,12 +39,15 @@ void main() {
   vUV = uv;
   vIndex = index;
 
-  float pixelX = float(index) / uCount;
-  vec2 uvS = vec2(pixelX, 0.5); 
+  vec2 pixSize = 1.0 / uResolution;
+  float pixelX = mod(float(index), uResolution.x) / uResolution.x;
+  float pixelY = 1.0 - (float(int(index) / int(uResolution.x)) / (uResolution.y - 1.0));
+  vec2 uvS = vec2(pixelX, pixelY) ; 
   vec3 audioData = texture2D(uAudioDataTexture, uvS).rgb;
+  vAudioData = audioData.r;
 
   vec3 scaling = vec3(0.0);
-  scaling = vec3(pow(audioData.r, 3.0));
+  scaling = vec3(clamp(pow(audioData.r, 3.0), 0.0, 3.0));
 
   mat4 offsetMatrix = mat4(1.0, 0.0, 0.0, 0.0,
                            0.0, 1.0, 0.0, 0.0,
@@ -64,7 +68,7 @@ void main() {
   vec3 rotationAxis = vec3(rotation.x, rotation.y, rotation.z);
   mat4 rot = rotationMatrix(rotationAxis, angle);
 
-  vec4 translatedPosition = translationMatrix * rot * scaleMatrix * vec4(position, 1.0);
+  vec4 translatedPosition = offsetMatrix * translationMatrix * rot * scaleMatrix * vec4(position, 1.0);
 
   vec4 scaledPosition = modelViewMatrix * translatedPosition;
 

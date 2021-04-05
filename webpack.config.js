@@ -99,7 +99,7 @@ module.exports = (env) => {
         "process.env.TRACKS": JSON.stringify(
           fs
             .readdirSync(
-              path.resolve(__dirname, "assets/audio/patterns.frequencies/")
+              path.resolve(__dirname, "assets/audio/patterns.instruments/")
             )
             .filter((e) => e !== ".DS_Store")
         ),

@@ -17,15 +17,11 @@ void main() {
 
   float pixelX = mod(float(uFrame), uResolution.x);
   float pixelY = float(uFrame) / uResolution.x;
-  vec2 uvS = vec2(uv.x * uResolution.x,
-                  (1.0 - uv.y) * uResolution.y);
-  if (pixelX == 0.0) {
-    color = vec3(0.0);
-  }
+  vec2 uvS = vec2(uv.x * uResolution.x, (1.0 - uv.y) * uResolution.y);
+  float threshold = 0.0;
   if (floor(uvS.x) == floor(pixelX) &&
-      average > 0.5
-      //floor(uvS.y) == floor(pixelY)
-      ) {
+      floor(uvS.y) == floor(pixelY) &&
+      average > threshold) {
     color += vec3(average);
   }
 

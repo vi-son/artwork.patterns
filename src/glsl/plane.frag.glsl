@@ -13,6 +13,7 @@ uniform sampler2D uAudioDataTexture;
 
 varying vec2 vUV;
 varying float vIndex;
+varying float vAudioData;
 
 void main() {
   vec3 color = uColor;
@@ -22,5 +23,5 @@ void main() {
   uvRandom.y *= grain(vec2(uvRandom.y, amount));
   color.rgb += grain(uvRandom) * 0.1;
 
-  gl_FragColor = vec4(color, pow(1.0 - vUV.y, 2.0));
+  gl_FragColor = vec4(color, (1.0 - vUV.y) * vAudioData);
 }
