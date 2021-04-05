@@ -12,7 +12,6 @@ uniform vec3 uColor;
 uniform sampler2D uAudioDataTexture;
 
 varying vec2 vUV;
-varying float vIndex;
 varying float vAudioData;
 
 void main() {

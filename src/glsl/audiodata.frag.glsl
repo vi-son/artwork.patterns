@@ -17,12 +17,13 @@ void main() {
 
   float pixelX = mod(float(uFrame), uResolution.x);
   float pixelY = float(uFrame) / uResolution.x;
-  vec2 uvS = vec2(uv.x * uResolution.x, (1.0 - uv.y) * uResolution.y);
+  float offsetY = 0.5; // @TODO
+  vec2 uvS = vec2(uv.x * uResolution.x, (1.0 - uv.y - offsetY) * uResolution.y);
   float threshold = 0.0;
   if (floor(uvS.x) == floor(pixelX) &&
       floor(uvS.y) == floor(pixelY) &&
       average > threshold) {
-    color += vec3(average);
+    color.r += average;
   }
 
   gl_FragColor = vec4(color, 1.0);

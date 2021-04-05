@@ -7,7 +7,7 @@ import Stats from "three/examples/jsm/libs/stats.module.js";
 import * as dat from "dat.gui";
 // Local imports
 import createLineGeometry from "./createLineGeometry.js";
-import PatternGroup from "./PatternGroup.js";
+import { remap, sample, calculateFrame } from "../utils/geometry.js";
 // GLSL imports
 import audioDataVS from "@glsl/audiodata.vert.glsl";
 import audioDataFS from "@glsl/audiodata.frag.glsl";
@@ -17,36 +17,6 @@ import tubeVS from "@glsl/tubes.vert.glsl";
 import tubeFS from "@glsl/tubes.frag.glsl";
 import patternVS from "@glsl/plane.vert.glsl";
 import patternFS from "@glsl/plane.frag.glsl";
-
-const remap = (v, a, b, c, d) => {
-  const newval = ((v - a) / (b - a)) * (d - c) + c;
-  return newval;
-};
-
-const calculateFrame = (start, ctrlA, ctrlB, end, t) => {
-  // find next sample along curve
-  const nextT = t + 0.001;
-
-  // sample the curve in two places
-  const current = sample(start, ctrlA, ctrlB, end, t);
-  const next = sample(start, ctrlA, ctrlB, end, nextT);
-
-  // compute the TBN matrix
-  const T = next.sub(current).normalize();
-  const B = T.clone().cross(next.clone().add(current)).normalize();
-  const N = B.clone().cross(T).normalize();
-
-  return { normal: N, bitangent: B, tangent: T };
-};
-
-const sample = (start, ctrlA, ctrlB, end, t) => {
-  return start
-    .clone()
-    .multiplyScalar(Math.pow(1.0 - t, 3.0))
-    .add(ctrlA.clone().multiplyScalar(3.0 * Math.pow(1.0 - t, 2.0) * t))
-    .add(ctrlB.clone().multiplyScalar(3.0 * (1.0 - t) * Math.pow(t, 2.0)))
-    .add(end.clone().multiplyScalar(Math.pow(t, 3.0)));
-};
 
 class Patterns {
   constructor(canvas, canvasWrapper) {
@@ -90,7 +60,8 @@ class Patterns {
   }
 
   _setupAudioAnalysis() {
-    this._renderTargetSize = new THREE.Vector2(128, 128);
+    this._renderTargetSize = new THREE.Vector2(512, 512);
+    // this._renderTargetSize = new THREE.Vector2(12, 12);
     this._renderTargets = [0, 1].map(
       () =>
         new THREE.WebGLRenderTarget(
@@ -152,7 +123,7 @@ class Patterns {
 
   _buildInstanceGeometries() {
     // Patterns geometries
-    const COUNT = Math.ceil(this._audioDuration) * 30;
+    const COUNT = Math.ceil(this._audioDuration) * 10;
     const color = this._colors[parseInt(Math.random() * this._colors.length)];
     this._patternMaterial = new THREE.ShaderMaterial({
       vertexShader: patternVS,
@@ -160,7 +131,7 @@ class Patterns {
       uniforms: {
         uFrame: { value: 0 },
         uColor: { value: color },
-        uSampleCount: { value: Math.ceil(this._audioDuration) * 60 },
+        uSampleCount: { value: Math.ceil(this._audioDuration) * 60.0 },
         uCount: { value: COUNT },
         uProgress: { value: 0.0 },
         uResolution: {
@@ -189,8 +160,12 @@ class Patterns {
 
     for (let i = 0; i < COUNT; i++) {
       // if (randomIndex === 0) {
-      instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 1.0, 1);
-      instanceGeometry.translate(0, 0.5, 0);
+      // instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 1.0, 1);
+
+      // Triangle
+      instanceGeometry = new THREE.CircleBufferGeometry(0.05, 3);
+      instanceGeometry.translate(0, 1.0, 0);
+
       // }
       // if (randomIndex === 1) {
       //   instanceGeometry = new THREE.BoxBufferGeometry(0.05, 0.1, 0.05);
@@ -221,13 +196,13 @@ class Patterns {
         bitangent.normalize()
       );
 
-      // const offsetRotationMatrix = new THREE.Matrix4();
-      // offsetRotationMatrix.makeRotationX(
-      //   Math.sin((i / COUNT) * Math.PI * 20.0) * 0.2
-      // );
-      // quaternion.setFromRotationMatrix(offsetRotationMatrix);
-      // matrix.compose(position, quaternion, scale);
-      // instanceGeometry.applyMatrix4(matrix);
+      const offsetRotationMatrix = new THREE.Matrix4();
+      offsetRotationMatrix.makeRotationX(
+        Math.sin((i / COUNT) * Math.PI * 20.0) * 0.2
+      );
+      quaternion.setFromRotationMatrix(offsetRotationMatrix);
+      matrix.compose(position, quaternion, scale);
+      instanceGeometry.applyMatrix4(matrix);
 
       const yScale = 1.0;
       instanceGeometry.setAttribute(
@@ -414,6 +389,11 @@ class Patterns {
     this._endHandle.position.copy(endHandlePosition);
     this._handlesGroup.add(this._endHandle);
 
+    this._handlesGroup.children.forEach((h) => {
+      h.material.color.set(0xe8534f);
+      h.scale.set(1.0, 1.0, 1.0);
+    });
+
     const dragControls = new DragControls(
       [this._startHandle, this._endHandle, this._startSphere, this._endSphere],
       this._camera,
@@ -511,14 +491,6 @@ class Patterns {
     this._playhead.add(this._arrowHelperNormal);
     this._playhead.add(this._arrowHelperTangent);
     this._playhead.add(this._arrowHelperBitangent);
-
-    // Pattern groups
-    const patternGroups = this._angles.map((a, i) => {
-      return new PatternGroup({
-        angle: a,
-        color: this._colors[i],
-      });
-    });
 
     // Tube/Bezier spline
     const numSides = 8;

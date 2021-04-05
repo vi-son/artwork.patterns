@@ -1,3 +1,6 @@
+precision highp float;
+precision highp int;
+
 attribute float index;
 attribute vec3 scale;
 attribute vec3 translation;
@@ -5,12 +8,12 @@ attribute vec4 rotation;
 
 uniform int uFrame;
 uniform float uCount;
+uniform float uSampleCount;
 uniform float uProgress;
 uniform vec2 uResolution;
 uniform sampler2D uAudioDataTexture;
 
 varying vec2 vUV;
-varying float vIndex;
 varying float vAudioData;
 
 highp mat4 rotationMatrix(highp vec3 n, highp float theta) {
@@ -37,13 +40,14 @@ highp mat4 rotationMatrix(highp vec3 n, highp float theta) {
 
 void main() {
   vUV = uv;
-  vIndex = index;
 
   vec2 pixSize = 1.0 / uResolution;
-  float pixelX = mod(float(index), uResolution.x) / uResolution.x;
-  float pixelY = 1.0 - (float(int(index) / int(uResolution.x)) / (uResolution.y - 1.0));
-  vec2 uvS = vec2(pixelX, pixelY) ; 
-  vec3 audioData = texture2D(uAudioDataTexture, uvS).rgb;
+  float idx = (index / uCount) * (uSampleCount - 1.0);
+  float pixelX = mod(idx, uResolution.x) / uResolution.x;
+  float pixelY = 1.0 - (float(int(idx) / int(uResolution.x)) / (uResolution.y - 1.0));
+  vec2 uvS = vec2(pixelX, pixelY) ;
+  float yOffset = 0.5; // @TODO
+  vec3 audioData = texture2D(uAudioDataTexture, uvS + vec2(0.0, yOffset)).rgb;
   vAudioData = audioData.r;
 
   vec3 scaling = vec3(0.0);
