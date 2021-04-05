@@ -1,12 +1,7 @@
-# [vi.son — mixing-senses](https://mixing-senses.art/de)
-### Artwork Template
+[![CI](https://github.com/vi-son/artwork.patterns/actions/workflows/deploy.yml/badge.svg)](https://github.com/vi-son/artwork.patterns/actions/workflows/deploy.yml)
 
-Artwork template for building artworks with descriptions for
-[exhibition.mixing-senses.art](https://https://exhibition.mixing-senses.art//).
+# [vi.son — mixing-senses](https://mixing-senses.art/de)
+### Artwork "Patterns"
 
 #### 1. Getting started
-
-`Use this template` to fork this template repository in order to create a new
-artwork for the exhibition.
-
 `npm run dev` to start the Webpback development server.
