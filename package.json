@@ -58,7 +58,7 @@
     "workbox-webpack-plugin": "^6.1.2"
   },
   "dependencies": {
-    "@vi.son/components": "file:../components",
+    "@vi.son/components": "^0.0.9",
     "favicons": "^6.2.1",
     "kea": "^2.3.4",
     "react-redux": "^7.2.3",
