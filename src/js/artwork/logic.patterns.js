@@ -13,7 +13,7 @@ const patternLogic = kea({
   actions: {
     setState: (state) => ({ state }),
 
-    init: (artwor) => ({ artwork }),
+    init: (artwork) => ({ artwork }),
 
     setStartPoint: (point) => ({ point }),
     setStartHandle: (handle) => ({ point }),
@@ -68,6 +68,7 @@ const patternLogic = kea({
   listeners: ({ actions, values }) => ({
     setState: () => {
       console.log("State change", values.state);
+      values.artwork.reactOnStateChange();
     },
   }),
 });

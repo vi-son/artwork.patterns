@@ -8,6 +8,7 @@ import * as dat from "dat.gui";
 // Local imports
 import createLineGeometry from "./createLineGeometry.js";
 import { remap, sample, calculateFrame } from "../utils/geometry.js";
+import patternsLogic, { PATTERNS_STATES } from "./logic.patterns.js";
 // GLSL imports
 import audioDataVS from "@glsl/audiodata.vert.glsl";
 import audioDataFS from "@glsl/audiodata.frag.glsl";
@@ -118,7 +119,7 @@ class Patterns {
       })
     );
     previewPlane.position.z = -3;
-    this._scene.add(previewPlane);
+    // this._scene.add(previewPlane);
   }
 
   _buildInstanceGeometries() {
@@ -340,7 +341,10 @@ class Patterns {
       fragmentShader: backgroundFS,
       uniforms: {
         uResolution: {
-          value: new THREE.Vector2(this._size.width, this._size.height),
+          value: new THREE.Vector2(
+            this._size.width * window.devicePixelRatio,
+            this._size.height * window.devicePixelRatio
+          ),
         },
       },
       depthWrite: false,
@@ -394,12 +398,12 @@ class Patterns {
       h.scale.set(1.0, 1.0, 1.0);
     });
 
-    const dragControls = new DragControls(
+    this._dragControls = new DragControls(
       [this._startHandle, this._endHandle, this._startSphere, this._endSphere],
       this._camera,
       this._renderer.domElement
     );
-    dragControls.addEventListener("drag", () => {
+    this._dragControls.addEventListener("drag", () => {
       this._instTubeMaterial.uniforms.uPoints.value = [
         this._startSphere.position,
         this._startHandle.position,
@@ -752,12 +756,14 @@ class Patterns {
   handlePointerDown(e) {
     this._mouseDown = true;
     this._raycaster.setFromCamera(this._mouse, this._camera);
-    var intersects = this._raycaster.intersectObjects(
-      this._handlesGroup.children
-    );
-    if (intersects.length > 0) {
-      this._controls.enabled = false;
-      this._controls.saveState();
+    if (this._dragControls.enabled) {
+      const intersects = this._raycaster.intersectObjects(
+        this._handlesGroup.children
+      );
+      if (intersects.length > 0) {
+        this._controls.enabled = false;
+        this._controls.saveState();
+      }
     }
   }
 
@@ -777,21 +783,23 @@ class Patterns {
     this._mouse.x = ((e.clientX - this._size.x) / this._size.width) * 2 - 1;
     this._mouse.y = -((e.clientY - this._size.y) / this._size.height) * 2 + 1;
 
-    this._raycaster.setFromCamera(this._mouse, this._camera);
-    var intersects = this._raycaster.intersectObjects(
-      this._handlesGroup.children
-    );
-    if (intersects.length > 0) {
-      this._controls.enabled = false;
-      // setIsDragging(true);
-      intersects[0].object.material.color.set(0x2b13ff);
-      intersects[0].object.scale.set(1.5, 1.5, 1.5);
-    } else {
-      this._controls.enabled = true;
-      this._handlesGroup.children.forEach((h) => {
-        h.material.color.set(0xe8534f);
-        h.scale.set(1.0, 1.0, 1.0);
-      });
+    if (this._dragControls.enabled) {
+      this._raycaster.setFromCamera(this._mouse, this._camera);
+      var intersects = this._raycaster.intersectObjects(
+        this._handlesGroup.children
+      );
+      if (intersects.length > 0) {
+        this._controls.enabled = false;
+        // setIsDragging(true);
+        intersects[0].object.material.color.set(0x2b13ff);
+        intersects[0].object.scale.set(1.5, 1.5, 1.5);
+      } else {
+        this._controls.enabled = true;
+        this._handlesGroup.children.forEach((h) => {
+          h.material.color.set(0xe8534f);
+          h.scale.set(1.0, 1.0, 1.0);
+        });
+      }
     }
   }
 
@@ -818,9 +826,47 @@ class Patterns {
     this._$f = 0;
   }
 
+  reactOnStateChange() {
+    switch (patternsLogic.values.state) {
+      case PATTERNS_STATES.INIT:
+        this._dragControls.enabled = false;
+        this._dragControls.deactivate();
+        break;
+      case PATTERNS_STATES.BEZIER_SETUP:
+        this._dragControls.enabled = true;
+        this._dragControls.activate();
+        break;
+      case PATTERNS_STATES.PREPARE:
+        this._dragControls.enabled = false;
+        this._dragControls.deactivate();
+        break;
+      case PATTERNS_STATES.PATTERNS:
+        this._dragControls.enabled = false;
+        this._dragControls.deactivate();
+        break;
+      case PATTERNS_STATES.FINISH:
+        this._dragControls.enabled = false;
+        this._dragControls.deactivate();
+        break;
+      default:
+        break;
+    }
+  }
+
   _renderLoop() {
     this._$t = this._clock.getElapsedTime();
     TWEEN.update();
+
+    // Render background
+    this._renderer.clear();
+    this._renderer.render(this._backgroundScene, this._backgroundCamera);
+
+    if (patternsLogic.values.state === PATTERNS_STATES.INIT) {
+      return;
+    }
+
+    // Render scene
+    this._renderer.render(this._scene, this._camera);
 
     if (this._analysers[this._TRACK_INDEX]) {
       this._avgFreqData[this._TRACK_INDEX] = this._analysers[
@@ -846,13 +892,7 @@ class Patterns {
       }
     }
 
-    // this._updatePlane(this._audioPlayProgress);
-
     // Update bezier
-    this._renderer.clear();
-    this._renderer.render(this._backgroundScene, this._backgroundCamera);
-    this._renderer.render(this._scene, this._camera);
-
     const { x, y, z } = this._startHandle.position;
     this._startHandleLine.geometry.attributes.position.array[0] = this._startSphere.position.x;
     this._startHandleLine.geometry.attributes.position.array[1] = this._startSphere.position.y;

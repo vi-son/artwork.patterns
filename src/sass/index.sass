@@ -41,6 +41,11 @@ $font-root: "@vi.son/rouge/fonts"
   cursor: grab
 
 .layout-exhibition
+  .main-content
+    flex-direction: column
+    justify-content: space-between
+    align-items: center
+
   .btn-open-narrative
     position: fixed
     bottom: 60px
@@ -53,12 +58,68 @@ $font-root: "@vi.son/rouge/fonts"
   .btn-to-exhibition
     pointer-events: all
 
-
   .btn-set-bezier
-    align-self: flex-end
-    margin-bottom: 80px
+    margin-bottom: 100px
+    +until($tablets)
+      margin-left: 30px
+      margin-bottom: 100px
+      align-self: flex-start
+      .btn
+        display: inline-flex
     .btn
       box-shadow: 0 10px 30px var(--color-ultradark-5)
+    .text
+      position: absolute
+      color: var(--color-darkness)
+      transform: translateX(14ch)
+      +until($tablets)
+        font-size: 1.0rem
+
+.interaction-bezier-handles
+  display: flex
+  font-size: 0.75rem
+  width: 100vw
+  padding: 30px
+  align-items: center
+  +from($tablets)
+    margin: 60px
+    justify-content: center
+    align-items: center
+  .bezier-icons
+    color: #e8534f
+    display: flex
+    flex-direction: column
+    font-size: 2rem
+    line-height: 0.75
+    span
+      &:last-child
+        margin-left: 10px
+  .icon
+    opacity: 0.3
+    transform: scale(0.75)
+  .text
+    opacity: 0.3
+    max-width: 20ch
+    +from($tablets)
+      max-width: 30ch
+
+.interaction-camera
+  display: flex
+  font-size: 0.75rem
+  opacity: 0.3
+  margin: 20px 0 0 30px
+  width: 100vw
+  align-items: center
+  +from($tablets)
+    margin: 60px
+    justify-content: center
+    align-items: center
+  .icon
+    transform: scale(0.75)
+  .text
+    max-width: 25ch
+    +from($tablets)
+      max-width: 30ch
 
 .stats
   position: fixed

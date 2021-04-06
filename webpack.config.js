@@ -40,6 +40,7 @@ module.exports = (env) => {
       extensions: [".js"],
       alias: {
         "@sass": path.join(__dirname, "src/sass/"),
+        "@assets": path.join(__dirname, "assets/"),
         "@glsl": path.join(__dirname, "src/glsl/"),
       },
     },

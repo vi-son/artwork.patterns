@@ -14,6 +14,8 @@ import ArtworkContainer from "./artwork/ArtworkContainer.js";
 import PatternsUI from "./artwork/PatternsUI.js";
 import Intro from "./artwork/Intro.js";
 import patternsLogic, { PATTERNS_STATES } from "./artwork/logic.patterns.js";
+// SVG imports
+import IconMouse from "@assets/svg/mouse.svg";
 // Style imports
 import "../sass/index.sass";
 
@@ -54,15 +56,40 @@ const Artwork = () => {
         <>
           {state === PATTERNS_STATES.INIT ? <Intro /> : <></>}
           {state === PATTERNS_STATES.BEZIER_SETUP ? (
-            <ButtonEmoji
-              className="btn-set-bezier"
-              emoji="👍🏻"
-              onClick={() => {}}
-            />
+            <>
+              <div className="interaction-bezier-handles">
+                <span className="bezier-icons">
+                  <span>◼</span>
+                  <span>●</span>
+                </span>
+                <IconMouse className="icon" />
+                <article className="text">
+                  Um die Kurve zu gestalten, verziehe die roten Punkte
+                </article>
+              </div>
+
+              <ButtonEmoji
+                className="btn-set-bezier"
+                emoji="🏁"
+                text="Kurve festlegen"
+                onClick={() => setState(PATTERNS_STATES.PREPARE)}
+              />
+            </>
           ) : (
             <></>
           )}
-          <ButtonToExhibition />
+          {state === PATTERNS_STATES.PREPARE ||
+          state === PATTERNS_STATES.PATTERNS ? (
+            <div className="interaction-camera">
+              <IconMouse className="icon" />
+              <article className="text">
+                Klick und ziehen zum Drehen Mausrad für Zoom
+              </article>
+            </div>
+          ) : (
+            <></>
+          )}
+          <ButtonToExhibition withText={false} />
           <ButtonOpenNarrative
             showNarrative={showNarrative}
             setShowNarrative={setShowNarrative}

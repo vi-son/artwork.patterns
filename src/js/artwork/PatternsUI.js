@@ -1,13 +1,14 @@
 // node_modules imports
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
+import { useActions, useValues } from "kea";
 // Local imports
+import patternsLogic, { PATTERNS_STATES } from "./logic.patterns.js";
 import Patterns from "./Patterns.js";
 // Style imports
 import "@sass/patterns.sass";
 
 const PatternsUI = ({ paused }) => {
-  const [patterns, setPatterns] = useState(null);
   const canvasWrapperRef = useRef();
   const canvasRef = useRef();
   const [freqData, setFreqData] = useState(
@@ -20,9 +21,12 @@ const PatternsUI = ({ paused }) => {
   const [isHovering, setIsHovering] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  const { init } = useActions(patternsLogic);
+  const { artwork } = useValues(patternsLogic);
+
   useEffect(() => {
     if (canvasRef.current && canvasWrapperRef.current) {
-      setPatterns(new Patterns(canvasRef.current, canvasWrapperRef.current));
+      init(new Patterns(canvasRef.current, canvasWrapperRef.current));
     }
     return () => {
       // canvasRef.current.removeEventListener("pointermove", pointerMoveListener);
@@ -33,11 +37,11 @@ const PatternsUI = ({ paused }) => {
 
   useEffect(() => {
     console.log("PAUSED: ", paused);
-    if (patterns && paused) {
-      patterns.pause();
+    if (artwork && paused) {
+      artwork.pause();
     }
-    if (patterns && !paused) {
-      patterns.continue();
+    if (artwork && !paused) {
+      artwork.continue();
     }
   }, [paused]);
 
