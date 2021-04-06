@@ -165,7 +165,7 @@ class Patterns {
 
       // Triangle
       instanceGeometry = new THREE.CircleBufferGeometry(0.05, 3);
-      instanceGeometry.translate(0, 1.0, 0);
+      instanceGeometry.translate(0, 0.0, 0);
 
       // }
       // if (randomIndex === 1) {
