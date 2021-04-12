@@ -89,6 +89,15 @@ const Artwork = () => {
           ) : (
             <></>
           )}
+          {state === PATTERNS_STATES.FINISH ? (
+            <ButtonEmoji
+              className="btn-to-overview"
+              emoji="👁"
+              onClick={() => setState(PATTERNS_STATES.OVERVIEW)}
+            />
+          ) : (
+            <></>
+          )}
           <ButtonToExhibition withText={false} />
           <ButtonOpenNarrative
             showNarrative={showNarrative}

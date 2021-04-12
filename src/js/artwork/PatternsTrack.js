@@ -1,29 +1,49 @@
 import * as THREE from "three";
 import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+// Local imports
+import { remap, sample, calculateFrame } from "../utils/geometry.js";
 
 class PatternsTrack extends THREE.Group {
-  constructor() {
+  constructor(audioListener, colorChannel, yOffset) {
     super();
+
+    this._colorChannel = colorChannel;
+    this._yOffset = yOffset;
+
+    this._setupAudio(audioListener);
   }
 
-  buildGeometry(count = 1) {
-    let instanceGeometry;
+  _setupAudio(audioListener) {
+    this._audio = new THREE.Audio(audioListener);
+    this._analyzer = new THREE.AudioAnalyser(this._audio, 32);
+  }
+
+  buildInstanceGeometry(
+    color,
+    COUNT,
+    material,
+    startSphere,
+    startHandle,
+    endHandle,
+    endSphere
+  ) {
     const geometries = [];
 
-    const matrix = new THREE.Matrix4();
-    const position = new THREE.Vector3(0, 0, 0);
+    let matrix = new THREE.Matrix4();
+    let position = new THREE.Vector3();
     const rotationMatrix = new THREE.Matrix4();
-    const quaternion = new THREE.Quaternion();
-    const scale = new THREE.Vector3(1, 1, 1);
+    let quaternion = new THREE.Quaternion();
+    let scale = new THREE.Vector3(1, 1, 1);
 
-    for (let i = 0; i < count; i++) {
-      // if (randomIndex === 0) {
-      // instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 1.0, 1);
-
+    let instanceGeometry;
+    const randomIndex = parseInt(Math.random() * 3);
+    for (let i = 0; i < COUNT; i++) {
+      // Planes
+      instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.5, 1);
+      instanceGeometry.translate(0, 0.75, 0);
       // Triangle
-      instanceGeometry = new THREE.CircleBufferGeometry(0.05, 3);
-      instanceGeometry.translate(0, 1.0, 0);
-
+      // instanceGeometry = new THREE.CircleBufferGeometry(0.05, 3);
+      // instanceGeometry.translate(0, 0.0, 0);
       // }
       // if (randomIndex === 1) {
       //   instanceGeometry = new THREE.BoxBufferGeometry(0.05, 0.1, 0.05);
@@ -32,18 +52,18 @@ class PatternsTrack extends THREE.Group {
       //   instanceGeometry = new THREE.SphereGeometry(0.1, 10, 10);
       // }
       const samplePosition = sample(
-        this._startSphere.position,
-        this._startHandle.position,
-        this._endHandle.position,
-        this._endSphere.position,
-        i / count
+        startSphere.position,
+        startHandle.position,
+        endHandle.position,
+        endSphere.position,
+        i / COUNT
       );
       const basis = calculateFrame(
-        this._startSphere.position,
-        this._startHandle.position,
-        this._endHandle.position,
-        this._endSphere.position,
-        i / count
+        startSphere.position,
+        startHandle.position,
+        endHandle.position,
+        endSphere.position,
+        i / COUNT
       );
 
       // Rotation
@@ -56,23 +76,11 @@ class PatternsTrack extends THREE.Group {
 
       const offsetRotationMatrix = new THREE.Matrix4();
       offsetRotationMatrix.makeRotationX(
-        Math.sin((i / count) * Math.PI * 20.0) * 0.2
+        Math.sin((i / COUNT) * Math.PI * 20.0) * 0.2
       );
       quaternion.setFromRotationMatrix(offsetRotationMatrix);
       matrix.compose(position, quaternion, scale);
       instanceGeometry.applyMatrix4(matrix);
-
-      // Shader attributes
-      instanceGeometry.setAttribute(
-        "index",
-        new THREE.Float32BufferAttribute(
-          new Array(instanceGeometry.getAttribute("position").count)
-            .fill(0)
-            .map(() => [i, i, i])
-            .reduce((a, v) => a.concat(v)),
-          3
-        ).setUsage(THREE.DynamicDrawUsage)
-      );
 
       const yScale = 1.0;
       instanceGeometry.setAttribute(
@@ -85,7 +93,6 @@ class PatternsTrack extends THREE.Group {
           3
         ).setUsage(THREE.DynamicDrawUsage)
       );
-
       instanceGeometry.setAttribute(
         "translation",
         new THREE.Float32BufferAttribute(
@@ -113,13 +120,31 @@ class PatternsTrack extends THREE.Group {
         ).setUsage(THREE.DynamicDrawUsage)
       );
 
+      instanceGeometry.setAttribute(
+        "index",
+        new THREE.Float32BufferAttribute(
+          new Array(instanceGeometry.getAttribute("position").count)
+            .fill(0)
+            .map(() => [i, i, i])
+            .reduce((a, v) => a.concat(v)),
+          3
+        ).setUsage(THREE.DynamicDrawUsage)
+      );
       geometries.push(instanceGeometry);
     }
     const patternsGeometry = BufferGeometryUtils.mergeBufferGeometries(
       geometries
     );
-    const mesh = new THREE.Mesh(patternsGeometry, this._patternMaterial);
-    console.log("GEOMETRY", patternsGeometry);
+    const instanceMesh = new THREE.Mesh(patternsGeometry, material);
+    return instanceMesh;
+  }
+
+  get audio() {
+    return this._audio;
+  }
+
+  get analyzer() {
+    return this._analyzer;
   }
 }
 

@@ -7,6 +7,7 @@ const PATTERNS_STATES = {
   PREPARE: "preapre",
   PATTERNS: "patterns",
   FINISH: "finish",
+  OVERVIEW: "overview",
 };
 
 const patternLogic = kea({

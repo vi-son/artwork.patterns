@@ -18,7 +18,7 @@ void main() {
   vec3 color = uColor;
 
   float amount = 0.5;
-  vec2 uvRandom = vUV;
+  vec2 uvRandom = gl_FragCoord.xy / uResolution;
   uvRandom.y *= grain(vec2(uvRandom.y, amount));
   color.rgb += grain(uvRandom) * 0.1;
 

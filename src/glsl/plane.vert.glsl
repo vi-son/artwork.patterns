@@ -11,6 +11,7 @@ uniform float uCount;
 uniform float uSampleCount;
 uniform float uProgress;
 uniform vec2 uResolution;
+uniform vec2 uOffset;
 uniform sampler2D uAudioDataTexture;
 
 varying vec2 vUV;
@@ -46,12 +47,20 @@ void main() {
   float pixelX = mod(idx, uResolution.x) / uResolution.x;
   float pixelY = 1.0 - (float(int(idx) / int(uResolution.x)) / (uResolution.y - 1.0));
   vec2 uvS = vec2(pixelX, pixelY) ;
-  float yOffset = 0.5; // @TODO
-  vec3 audioData = texture2D(uAudioDataTexture, uvS + vec2(0.0, yOffset)).rgb;
-  vAudioData = audioData.r;
+  float yOffset = uOffset.y;
+  vec3 audioData = texture2D(uAudioDataTexture, uvS + vec2(-1.0 / uResolution.y, yOffset)).rgb;
+  if (uOffset.x == 0.0) {
+    vAudioData = audioData.r;
+  }
+  if (uOffset.x == 1.0) {
+    vAudioData = audioData.g;
+  }
+  if (uOffset.x == 2.0) {
+    vAudioData = audioData.b;
+  }
 
   vec3 scaling = vec3(0.0);
-  scaling = vec3(clamp(pow(audioData.r, 3.0), 0.0, 3.0));
+  scaling = vec3(clamp(pow(vAudioData, 3.0), 0.0, 3.0));
 
   mat4 offsetMatrix = mat4(1.0, 0.0, 0.0, 0.0,
                            0.0, 1.0, 0.0, 0.0,
