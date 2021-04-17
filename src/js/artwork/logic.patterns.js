@@ -23,6 +23,8 @@ const patternLogic = kea({
   },
 
   reducers: {
+    trackCount: [5],
+
     state: [
       PATTERNS_STATES.INIT,
       {

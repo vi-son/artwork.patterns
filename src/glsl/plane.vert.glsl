@@ -40,7 +40,7 @@ highp mat4 rotationMatrix(highp vec3 n, highp float theta) {
 }
 
 void main() {
-  vUV = uv;
+  vUV = vec2(0.0, 1.0) - uv;
 
   vec2 pixSize = 1.0 / uResolution;
   float idx = (index / uCount) * (uSampleCount - 1.0);
@@ -59,8 +59,8 @@ void main() {
     vAudioData = audioData.b;
   }
 
-  vec3 scaling = vec3(0.0);
-  scaling = vec3(clamp(pow(vAudioData, 3.0), 0.0, 3.0));
+  vec3 scaling = vec3(1.0);
+  // scaling = vec3(clamp(pow(vAudioData, 3.0), 0.0, 3.0));
 
   mat4 offsetMatrix = mat4(1.0, 0.0, 0.0, 0.0,
                            0.0, 1.0, 0.0, 0.0,
@@ -86,4 +86,5 @@ void main() {
   vec4 scaledPosition = modelViewMatrix * translatedPosition;
 
   gl_Position = projectionMatrix * scaledPosition;
+  // gl_Position = projectionMatrix * vec4(position, 1.0);
 }

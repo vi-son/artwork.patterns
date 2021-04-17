@@ -17,8 +17,8 @@ import backgroundVS from "@glsl/background.vert.glsl";
 import backgroundFS from "@glsl/background.frag.glsl";
 import tubeVS from "@glsl/tubes.vert.glsl";
 import tubeFS from "@glsl/tubes.frag.glsl";
-import patternVS from "@glsl/plane.vert.glsl";
-import patternFS from "@glsl/plane.frag.glsl";
+
+const MAX_LOG = 5.541263545158426;
 
 class Patterns {
   constructor(canvas, canvasWrapper) {
@@ -29,7 +29,7 @@ class Patterns {
     this._clock = new THREE.Clock();
     this._$t = this._clock.getElapsedTime();
     this._$f = 0;
-    this._TRACK_INDEX = 0;
+    this._TRACK_INDEX = 2;
 
     this._freqIndex = 3;
     this._threshholds = [10, 10, 10, 10, 10];
@@ -63,7 +63,8 @@ class Patterns {
   }
 
   _setupAudioAnalysis() {
-    this._renderTargetSize = new THREE.Vector2(512, 512);
+    // this._renderTargetSize = new THREE.Vector2(512, 512);
+    this._renderTargetSize = new THREE.Vector2(128, 128);
     this._renderTargets = [0, 1].map(
       () =>
         new THREE.WebGLRenderTarget(
@@ -115,52 +116,43 @@ class Patterns {
     );
     this._audioScene.add(audioPlane);
 
+    // Audio data texture
+    this._audioDataTextureSize =
+      this._renderTargetSize.x * this._renderTargetSize.y;
+    this._data = new Float32Array(3 * this._audioDataTextureSize);
+    for (let i = 0; i < this._audioDataTextureSize; i++) {
+      const stride = i * 3;
+      this._data[stride] = 0;
+      this._data[stride + 1] = 0;
+      this._data[stride + 2] = 0;
+    }
+    this._audioDataTexture = new THREE.DataTexture(
+      this._data,
+      this._renderTargetSize.x,
+      this._renderTargetSize.y,
+      THREE.RGBFormat
+    );
+    this._audioDataTexture.type = THREE.FloatType;
+
     // Debug helper
     if (process.env.NODE_ENV === "development") {
       const previewPlane = new THREE.Mesh(
         planeGeometry,
         new THREE.MeshBasicMaterial({
-          map: this._renderTargets[0].texture,
+          map: this._audioDataTexture,
           side: THREE.DoubleSide,
         })
       );
       previewPlane.position.z = -3;
-      this._scene.add(previewPlane);
+      // this._scene.add(previewPlane);
     }
   }
 
   _buildInstanceGeometries() {
     // Patterns geometries
-    const COUNT = Math.ceil(this._audioDuration) * 10;
-    const color = this._colors[parseInt(Math.random() * this._colors.length)];
-    this._patternMaterial = new THREE.ShaderMaterial({
-      vertexShader: patternVS,
-      fragmentShader: patternFS,
-      uniforms: {
-        uFrame: { value: 0 },
-        uColor: { value: color },
-        uOffset: { value: new THREE.Vector2(0.0, 0) },
-        uSampleCount: { value: Math.ceil(this._audioDuration) * 60.0 },
-        uCount: { value: COUNT },
-        uProgress: { value: 0.0 },
-        uResolution: {
-          value: new THREE.Vector2(
-            this._renderTargetSize.x,
-            this._renderTargetSize.y
-          ),
-        },
-        uAudioDataTexture: { value: this._renderTargets[0].texture },
-      },
-      side: THREE.DoubleSide,
-      transparent: true,
-      depthWrite: false,
-    });
-
     this._patternTracks.map((patternTrack) => {
       const mesh = patternTrack.buildInstanceGeometry(
-        color,
-        COUNT,
-        this._patternMaterial,
+        this._audioDuration,
         this._startSphere,
         this._startHandle,
         this._endHandle,
@@ -459,20 +451,8 @@ class Patterns {
     this._audioDuration = 0;
     this._audioPlayProgress = 0.0;
 
-    // Audio analyze
-    // Audio debug helper
-    /*
-    this._audioFreqHelperArray = new Array(this._audioTracks.length)
-      .fill(0)
-      .map((_) => new Array(32).fill(undefined));
-    this._audioFreqHelperMaterial = new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      side: THREE.DoubleSide,
-    });
-    */
-
     this._patternTracks = [];
-    this._audioTracks.map((track, i) => {
+    this._audioTracks.slice(0, 5).map((track, i) => {
       audioLoader.load(
         `/assets/audio/patterns.instruments/${track}`,
         (buffer) => {
@@ -480,33 +460,37 @@ class Patterns {
           console.log("Audio Buffer", buffer);
           console.log("Audio duration * 60 fps", durationFPS);
           this._audioDuration = buffer.duration;
-
-          const colorChannel = 2;
-          const yOffset = 0.5;
+          const color = this._colors[
+            parseInt(Math.random() * this._colors.length)
+          ];
+          const colorChannel = i % 3;
+          const yOffset = i % 2 === 1 ? 0.5 : 0.0;
           const patternTrack = new PatternsTrack(
             this._audioListener,
-            2,
-            yOffset
+            colorChannel,
+            yOffset,
+            color,
+            i,
+            this._renderTargetSize,
+            this._audioDataTexture
           );
           patternTrack.audio.setBuffer(buffer);
           patternTrack.audio.setLoop(false);
           patternTrack.audio.setVolume(1.0);
           this._patternTracks.push(patternTrack);
+          if (i === 0) {
+            // Audio finished listener
+            patternTrack.audio.onEnded = () => {
+              patternsLogic.actions.setState(PATTERNS_STATES.FINISH);
+            };
+          }
         },
         (xhr) => {}
       );
-      // @TODO
-      // this._sounds[0].onEnded = () => {
-      //   patternsLogic.actions.setState(PATTERNS_STATES.FINISH);
-      // };
     });
 
     // After loading all sounds
-    this._analysers = new Array(this._audioTracks.length).fill(undefined);
-    this._freqData = new Array(this._audioTracks.length).fill(undefined);
-    this._avgFreqData = new Array(this._audioTracks.length).fill(undefined);
     this._loadingManager.onLoad = () => {};
-
     this._loadingManager.onProgress = (url, loaded, total) => {
       console.log((loaded / total) * 100 + "% loaded");
       if (loaded / total >= 1.0) {
@@ -619,16 +603,6 @@ class Patterns {
       this._playhead.position.copy(samplePosition);
       this._playhead.quaternion.setFromRotationMatrix(rotationMatrix);
     }
-
-    // if (
-    //   this._controls &&
-    //   samplePosition.x !== NaN &&
-    //   samplePosition.y !== NaN &&
-    //   samplePosition.z !== NaN
-    // ) {
-    //   this._controls.target.copy(samplePosition);
-    //   this._controls.update();
-    // }
   }
 
   handleKeyUp(e) {
@@ -752,69 +726,63 @@ class Patterns {
       return;
     }
 
+    if (patternsLogic.values.state === PATTERNS_STATES.BEZIER_SETUP) {
+      // Update bezier
+      const { x, y, z } = this._startHandle.position;
+      this._startHandleLine.geometry.attributes.position.array[0] = this._startSphere.position.x;
+      this._startHandleLine.geometry.attributes.position.array[1] = this._startSphere.position.y;
+      this._startHandleLine.geometry.attributes.position.array[2] = this._startSphere.position.z;
+
+      this._startHandleLine.geometry.attributes.position.array[3] = x;
+      this._startHandleLine.geometry.attributes.position.array[4] = y;
+      this._startHandleLine.geometry.attributes.position.array[5] = z;
+
+      this._startHandleLine.geometry.attributes.position.needsUpdate = true;
+
+      this._endHandleLine.geometry.attributes.position.array[0] = this._endSphere.position.x;
+      this._endHandleLine.geometry.attributes.position.array[1] = this._endSphere.position.y;
+      this._endHandleLine.geometry.attributes.position.array[2] = this._endSphere.position.z;
+
+      this._endHandleLine.geometry.attributes.position.array[3] = this._endHandle.position.x;
+      this._endHandleLine.geometry.attributes.position.array[4] = this._endHandle.position.y;
+      this._endHandleLine.geometry.attributes.position.array[5] = this._endHandle.position.z;
+      this._endHandleLine.geometry.attributes.position.needsUpdate = true;
+    }
+
     // @TODO
     if (patternsLogic.values.state === PATTERNS_STATES.PREPARE) {
       this._lookAtSamplePosition();
     }
 
+    /*
+    for (let i = 0; i < this._patternTracks.length; i++) {
+      const track = this._patternTracks[i];
+      const analyzer = track ? track.analyzer : undefined;
+      const avgFreq = analyzer ? analyzer.getAverageFrequency() : 0.0;
+
+      const yOffset =
+        track.yOffset * this._renderTargetSize.y * this._renderTargetSize.x * 3;
+      this._data[yOffset + (this._$f * 3 + track.colorChannel)] =
+        Math.log(avgFreq) / MAX_LOG;
+      this._audioDataTexture.needsUpdate = true;
+
+      // Update patterns material
+      if (track.material) {
+        track.material.uniforms.uProgress.value = this._audioPlayProgress;
+        track.material.uniforms.uFrame.value = this._$f;
+        track.material.uniforms.uOffset.value = new THREE.Vector2(0, 0);
+        track.material.uniforms.uColor.value = track.color;
+      }
+    }
+    */
+
     // Render scene
     this._renderer.render(this._scene, this._camera);
-
-    if (this._analysers[this._TRACK_INDEX]) {
-      this._avgFreqData[this._TRACK_INDEX] = this._analysers[
-        this._TRACK_INDEX
-      ].getAverageFrequency();
-      if (this._audioAnalysisBufferMaterial) {
-        this._audioAnalysisBufferMaterial.uniforms.uAverageFrequency.value = this._avgFreqData[
-          this._TRACK_INDEX
-        ];
-        this._audioAnalysisBufferMaterial.uniforms.uFrame.value = this._$f;
-      }
-    }
-
-    if (this._renderTargets) {
-      this._renderer.setRenderTarget(this._renderTargets[(this._$f + 1) % 2]);
-      this._renderer.render(this._audioScene, this._audioCamera);
-      this._renderer.setRenderTarget(null);
-
-      if (this._$f % 2 === 0) {
-        this._audioAnalysisBufferMaterial.uniforms.uTexture.value = this._renderTargets[1].texture;
-      } else {
-        this._audioAnalysisBufferMaterial.uniforms.uTexture.value = this._renderTargets[0].texture;
-      }
-    }
-
-    // Update bezier
-    const { x, y, z } = this._startHandle.position;
-    this._startHandleLine.geometry.attributes.position.array[0] = this._startSphere.position.x;
-    this._startHandleLine.geometry.attributes.position.array[1] = this._startSphere.position.y;
-    this._startHandleLine.geometry.attributes.position.array[2] = this._startSphere.position.z;
-
-    this._startHandleLine.geometry.attributes.position.array[3] = x;
-    this._startHandleLine.geometry.attributes.position.array[4] = y;
-    this._startHandleLine.geometry.attributes.position.array[5] = z;
-
-    this._startHandleLine.geometry.attributes.position.needsUpdate = true;
-
-    this._endHandleLine.geometry.attributes.position.array[0] = this._endSphere.position.x;
-    this._endHandleLine.geometry.attributes.position.array[1] = this._endSphere.position.y;
-    this._endHandleLine.geometry.attributes.position.array[2] = this._endSphere.position.z;
-
-    this._endHandleLine.geometry.attributes.position.array[3] = this._endHandle.position.x;
-    this._endHandleLine.geometry.attributes.position.array[4] = this._endHandle.position.y;
-    this._endHandleLine.geometry.attributes.position.array[5] = this._endHandle.position.z;
-    this._endHandleLine.geometry.attributes.position.needsUpdate = true;
 
     // Calculate audio things
     if (this._allLoaded) {
       const t = this._audioListener.context.currentTime;
       this._audioPlayProgress = t / this._audioDuration;
-    }
-
-    // Update patterns material
-    if (this._patternMaterial) {
-      this._patternMaterial.uniforms.uProgress.value = this._audioPlayProgress;
-      this._patternMaterial.uniforms.uFrame.value = this._$f;
     }
 
     if (this._stats !== undefined) {

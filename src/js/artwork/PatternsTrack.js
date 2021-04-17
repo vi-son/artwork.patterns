@@ -2,13 +2,56 @@ import * as THREE from "three";
 import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 // Local imports
 import { remap, sample, calculateFrame } from "../utils/geometry.js";
+import patternsLogic from "./logic.patterns.js";
+// GLSL imports
+import patternVS from "@glsl/plane.vert.glsl";
+import patternFS from "@glsl/plane.frag.glsl";
 
 class PatternsTrack extends THREE.Group {
-  constructor(audioListener, colorChannel, yOffset) {
+  constructor(
+    audioListener,
+    colorChannel,
+    yOffset,
+    color,
+    index,
+    renderTargetSize,
+    audioDataTexture
+  ) {
     super();
 
     this._colorChannel = colorChannel;
     this._yOffset = yOffset;
+    this._color = color;
+    this._index = index;
+
+    this._material = new THREE.ShaderMaterial({
+      vertexShader: patternVS,
+      fragmentShader: patternFS,
+      uniforms: {
+        uFrame: { value: 0 },
+        uColor: { value: this._color },
+        uOffset: {
+          value: new THREE.Vector2(this._colorChannel, this._yOffset),
+        },
+        uSampleCount: { value: 0 },
+        uCount: { value: 0 },
+        uProgress: { value: 0.0 },
+        uResolution: {
+          value: new THREE.Vector2(renderTargetSize.x, renderTargetSize.y),
+        },
+        uAudioDataTexture: { value: audioDataTexture },
+      },
+      side: THREE.DoubleSide,
+      transparent: true,
+      depthWrite: true,
+    });
+
+    console.group("New Patterns Track");
+    console.log("Index", this._index);
+    console.log("Color channel", this._colorChannel);
+    console.log("Y offset", this._yOffset);
+    console.log("Color", this._color);
+    console.groupEnd();
 
     this._setupAudio(audioListener);
   }
@@ -19,9 +62,7 @@ class PatternsTrack extends THREE.Group {
   }
 
   buildInstanceGeometry(
-    color,
-    COUNT,
-    material,
+    audioDuration,
     startSphere,
     startHandle,
     endHandle,
@@ -29,28 +70,44 @@ class PatternsTrack extends THREE.Group {
   ) {
     const geometries = [];
 
+    const COUNT = Math.ceil(audioDuration);
+    const sampleCount = Math.ceil(audioDuration) * 60.0;
+    this._material.uniforms.uSampleCount.value = sampleCount;
+    this._material.uniforms.uCount.value = COUNT;
+    this._material.needsUpdate = true;
+
+    console.log("Count: ", COUNT);
+    console.log("sampleCount: ", sampleCount);
+
     let matrix = new THREE.Matrix4();
     let position = new THREE.Vector3();
     const rotationMatrix = new THREE.Matrix4();
     let quaternion = new THREE.Quaternion();
     let scale = new THREE.Vector3(1, 1, 1);
 
-    let instanceGeometry;
-    const randomIndex = parseInt(Math.random() * 3);
     for (let i = 0; i < COUNT; i++) {
-      // Planes
-      instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.5, 1);
-      instanceGeometry.translate(0, 0.75, 0);
-      // Triangle
-      // instanceGeometry = new THREE.CircleBufferGeometry(0.05, 3);
-      // instanceGeometry.translate(0, 0.0, 0);
-      // }
-      // if (randomIndex === 1) {
-      //   instanceGeometry = new THREE.BoxBufferGeometry(0.05, 0.1, 0.05);
-      // }
-      // if (randomIndex === 2) {
-      //   instanceGeometry = new THREE.SphereGeometry(0.1, 10, 10);
-      // }
+      let instanceGeometry;
+      switch (this._index) {
+        case 0:
+          // Planes
+          instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.5, 1);
+          instanceGeometry.translate(0, 0.75, 0);
+          break;
+        // case 1:
+        //   // Triangle
+        //   // instanceGeometry = new THREE.CircleBufferGeometry(0.05, 3);
+        //   // instanceGeometry.translate(0, 0.0, 0);
+        //   break;
+        // case 2:
+        //   instanceGeometry = new THREE.BoxBufferGeometry(0.05, 0.1, 0.05);
+        //   break;
+        // case 3:
+        //   instanceGeometry = new THREE.SphereGeometry(0.1, 10, 10);
+        default:
+          instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.5, 1);
+          instanceGeometry.translate(0, 0.6, 0);
+          break;
+      }
       const samplePosition = sample(
         startSphere.position,
         startHandle.position,
@@ -75,9 +132,10 @@ class PatternsTrack extends THREE.Group {
       );
 
       const offsetRotationMatrix = new THREE.Matrix4();
-      offsetRotationMatrix.makeRotationX(
-        Math.sin((i / COUNT) * Math.PI * 20.0) * 0.2
-      );
+      const worldRotation =
+        this._index * ((Math.PI * 2.0) / patternsLogic.values.trackCount);
+      // Math.sin((i / COUNT) * Math.PI * 20.0) * 0.2
+      offsetRotationMatrix.makeRotationX(worldRotation);
       quaternion.setFromRotationMatrix(offsetRotationMatrix);
       matrix.compose(position, quaternion, scale);
       instanceGeometry.applyMatrix4(matrix);
@@ -98,11 +156,7 @@ class PatternsTrack extends THREE.Group {
         new THREE.Float32BufferAttribute(
           new Array(instanceGeometry.getAttribute("position").count)
             .fill(0)
-            .map(() => [
-              samplePosition.x,
-              0.05 + samplePosition.y,
-              samplePosition.z,
-            ])
+            .map(() => [samplePosition.x, samplePosition.y, samplePosition.z])
             .reduce((a, v) => a.concat(v)),
           3
         ).setUsage(THREE.DynamicDrawUsage)
@@ -135,8 +189,8 @@ class PatternsTrack extends THREE.Group {
     const patternsGeometry = BufferGeometryUtils.mergeBufferGeometries(
       geometries
     );
-    const instanceMesh = new THREE.Mesh(patternsGeometry, material);
-    return instanceMesh;
+    this._instanceMesh = new THREE.Mesh(patternsGeometry, this._material);
+    return this._instanceMesh;
   }
 
   get audio() {
@@ -145,6 +199,22 @@ class PatternsTrack extends THREE.Group {
 
   get analyzer() {
     return this._analyzer;
+  }
+
+  get colorChannel() {
+    return this._colorChannel;
+  }
+
+  get yOffset() {
+    return this._yOffset;
+  }
+
+  get color() {
+    return this._color;
+  }
+
+  get material() {
+    return this._material;
   }
 }
 
