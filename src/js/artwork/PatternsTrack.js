@@ -44,6 +44,8 @@ class PatternsTrack extends THREE.Group {
       side: THREE.DoubleSide,
       transparent: true,
       depthWrite: true,
+      depthTest: true,
+      blending: THREE.NormalBlending,
     });
 
     console.group("New Patterns Track");
@@ -91,23 +93,29 @@ class PatternsTrack extends THREE.Group {
         case 0:
           // Planes
           instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.5, 1);
-          instanceGeometry.translate(0, 0.75, 0);
+          instanceGeometry.translate(0, 0.25 + 0.25, 0);
           break;
-        // case 1:
-        //   // Triangle
-        //   // instanceGeometry = new THREE.CircleBufferGeometry(0.05, 3);
-        //   // instanceGeometry.translate(0, 0.0, 0);
-        //   break;
-        // case 2:
-        //   instanceGeometry = new THREE.BoxBufferGeometry(0.05, 0.1, 0.05);
-        //   break;
-        // case 3:
-        //   instanceGeometry = new THREE.SphereGeometry(0.1, 10, 10);
+        case 1:
+          // Triangles
+          instanceGeometry = new THREE.CircleBufferGeometry(0.1, 3);
+          instanceGeometry.translate(0, 0.25, 0);
+          break;
+        case 2:
+          // Circles
+          instanceGeometry = new THREE.CircleBufferGeometry(0.1, 32);
+          instanceGeometry.translate(0, 0.25, 0);
+          break;
         default:
           instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.5, 1);
-          instanceGeometry.translate(0, 0.6, 0);
+          instanceGeometry.translate(0, 0.25, 0);
           break;
       }
+
+      // Random offset
+      const randomScale = 1.0 + (Math.random() - 0.5) / 2.0;
+      instanceGeometry.translate(0, 0.25 * Math.random(), 0);
+      instanceGeometry.scale(randomScale, randomScale, randomScale);
+
       const samplePosition = sample(
         startSphere.position,
         startHandle.position,

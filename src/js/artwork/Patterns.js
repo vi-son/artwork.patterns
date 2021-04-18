@@ -35,11 +35,11 @@ class Patterns {
     this._threshholds = [10, 10, 10, 10, 10];
 
     this._colors = [
-      new THREE.Color(0x2b13ff),
-      new THREE.Color(0xd70c5c),
-      new THREE.Color(0xff961e),
-      new THREE.Color(0x0de2be),
-      new THREE.Color(0x6019ea),
+      new THREE.Color(0x9e7de5),
+      new THREE.Color(0xe8534f),
+      new THREE.Color(0xffa763),
+      new THREE.Color(0x8cdaf1),
+      new THREE.Color(0x5f83ff),
     ];
     this._angles = [0, 72, 144, 216, 288];
 
@@ -460,9 +460,7 @@ class Patterns {
           console.log("Audio Buffer", buffer);
           console.log("Audio duration * 60 fps", durationFPS);
           this._audioDuration = buffer.duration;
-          const color = this._colors[
-            parseInt(Math.random() * this._colors.length)
-          ];
+          const color = this._colors[i];
           const colorChannel = i % 3;
           const yOffset = i % 2 === 1 ? 0.5 : 0.0;
           const patternTrack = new PatternsTrack(
@@ -609,6 +607,9 @@ class Patterns {
     console.log(e);
     if (e.key === "e") {
       this._buildInstanceGeometries();
+    }
+    if (e.key === "c") {
+      this._canvas.requestFullscreen();
     }
   }
 
