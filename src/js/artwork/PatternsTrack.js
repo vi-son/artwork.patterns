@@ -43,9 +43,9 @@ class PatternsTrack extends THREE.Group {
       },
       side: THREE.DoubleSide,
       transparent: true,
-      depthWrite: true,
-      depthTest: true,
-      blending: THREE.NormalBlending,
+      // depthWrite: true,
+      // depthTest: true,
+      // blending: THREE.NormalBlending,
     });
 
     console.group("New Patterns Track");
@@ -72,7 +72,7 @@ class PatternsTrack extends THREE.Group {
   ) {
     const geometries = [];
 
-    const COUNT = Math.ceil(audioDuration);
+    const COUNT = Math.ceil(audioDuration) * 10;
     const sampleCount = Math.ceil(audioDuration) * 60.0;
     this._material.uniforms.uSampleCount.value = sampleCount;
     this._material.uniforms.uCount.value = COUNT;
@@ -142,8 +142,11 @@ class PatternsTrack extends THREE.Group {
       const offsetRotationMatrix = new THREE.Matrix4();
       const worldRotation =
         this._index * ((Math.PI * 2.0) / patternsLogic.values.trackCount);
-      // Math.sin((i / COUNT) * Math.PI * 20.0) * 0.2
-      offsetRotationMatrix.makeRotationX(worldRotation);
+      const rotationAlongPath = (i / COUNT) * Math.PI * 3.0;
+      const extraRotation = Math.sin((i / COUNT) * Math.PI * 20.0) * 0.75;
+      offsetRotationMatrix.makeRotationX(
+        worldRotation + rotationAlongPath + extraRotation
+      );
       quaternion.setFromRotationMatrix(offsetRotationMatrix);
       matrix.compose(position, quaternion, scale);
       instanceGeometry.applyMatrix4(matrix);

@@ -45,10 +45,11 @@ void main() {
   vec2 pixSize = 1.0 / uResolution;
   float idx = (index / uCount) * (uSampleCount - 1.0);
   float pixelX = mod(idx, uResolution.x) / uResolution.x;
-  float pixelY = 1.0 - (float(int(idx) / int(uResolution.x)) / (uResolution.y - 1.0));
+  float pixelY = float(int(idx) / int(uResolution.x)) / (uResolution.y);
   vec2 uvS = vec2(pixelX, pixelY) ;
   float yOffset = uOffset.y;
   vec3 audioData = texture2D(uAudioDataTexture, uvS + vec2(-1.0 / uResolution.y, yOffset)).rgb;
+
   if (uOffset.x == 0.0) {
     vAudioData = audioData.r;
   }
@@ -59,8 +60,8 @@ void main() {
     vAudioData = audioData.b;
   }
 
-  vec3 scaling = vec3(1.0);
-  // scaling = vec3(clamp(pow(vAudioData, 3.0), 0.0, 3.0));
+  vec3 scaling = vec3(0.0001);
+  scaling = vec3(clamp(pow(vAudioData, 3.0), 0.0, 3.0));
 
   mat4 offsetMatrix = mat4(1.0, 0.0, 0.0, 0.0,
                            0.0, 1.0, 0.0, 0.0,
@@ -86,5 +87,4 @@ void main() {
   vec4 scaledPosition = modelViewMatrix * translatedPosition;
 
   gl_Position = projectionMatrix * scaledPosition;
-  // gl_Position = projectionMatrix * vec4(position, 1.0);
 }

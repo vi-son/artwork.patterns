@@ -29,10 +29,8 @@ class Patterns {
     this._clock = new THREE.Clock();
     this._$t = this._clock.getElapsedTime();
     this._$f = 0;
-    this._TRACK_INDEX = 2;
 
-    this._freqIndex = 3;
-    this._threshholds = [10, 10, 10, 10, 10];
+    this._THRESHOLD = 0.65;
 
     this._colors = [
       new THREE.Color(0x9e7de5),
@@ -63,8 +61,8 @@ class Patterns {
   }
 
   _setupAudioAnalysis() {
-    // this._renderTargetSize = new THREE.Vector2(512, 512);
-    this._renderTargetSize = new THREE.Vector2(128, 128);
+    this._renderTargetSize = new THREE.Vector2(512, 512);
+    // this._renderTargetSize = new THREE.Vector2(128, 128);
     this._renderTargets = [0, 1].map(
       () =>
         new THREE.WebGLRenderTarget(
@@ -150,15 +148,23 @@ class Patterns {
 
   _buildInstanceGeometries() {
     // Patterns geometries
-    this._patternTracks.map((patternTrack) => {
-      const mesh = patternTrack.buildInstanceGeometry(
-        this._audioDuration,
-        this._startSphere,
-        this._startHandle,
-        this._endHandle,
-        this._endSphere
-      );
-      this._scene.add(mesh);
+    const buildProcess = new Promise((resolve, reject) => {
+      this._patternTracks.map((patternTrack, i) => {
+        const mesh = patternTrack.buildInstanceGeometry(
+          this._audioDuration,
+          this._startSphere,
+          this._startHandle,
+          this._endHandle,
+          this._endSphere
+        );
+        this._scene.add(mesh);
+        if (i === this._patternTracks.length) {
+          resolve();
+        }
+      });
+    });
+    buildProcess.then(() => {
+      patternsLogic.actions.setState(PATTERNS_STATES.PATTERNS);
     });
   }
 
@@ -493,8 +499,7 @@ class Patterns {
       console.log((loaded / total) * 100 + "% loaded");
       if (loaded / total >= 1.0) {
         this._allLoaded = true;
-        this.continue();
-        console.log("All sounds loaded... playing", this._sounds);
+        console.log("All sounds loaded...", this._sounds);
       }
     };
   }
@@ -698,10 +703,12 @@ class Patterns {
       case PATTERNS_STATES.PREPARE:
         this._dragControls.enabled = false;
         this._dragControls.deactivate();
+        this._buildInstanceGeometries();
         break;
       case PATTERNS_STATES.PATTERNS:
         this._dragControls.enabled = false;
         this._dragControls.deactivate();
+        this.continue();
         break;
       case PATTERNS_STATES.FINISH:
         this._dragControls.enabled = false;
@@ -755,27 +762,24 @@ class Patterns {
       this._lookAtSamplePosition();
     }
 
-    /*
     for (let i = 0; i < this._patternTracks.length; i++) {
       const track = this._patternTracks[i];
       const analyzer = track ? track.analyzer : undefined;
       const avgFreq = analyzer ? analyzer.getAverageFrequency() : 0.0;
 
+      const audioValue = Math.log(avgFreq) / MAX_LOG;
       const yOffset =
         track.yOffset * this._renderTargetSize.y * this._renderTargetSize.x * 3;
       this._data[yOffset + (this._$f * 3 + track.colorChannel)] =
-        Math.log(avgFreq) / MAX_LOG;
+        audioValue > this._THRESHOLD ? audioValue : 0.0;
       this._audioDataTexture.needsUpdate = true;
 
       // Update patterns material
       if (track.material) {
         track.material.uniforms.uProgress.value = this._audioPlayProgress;
         track.material.uniforms.uFrame.value = this._$f;
-        track.material.uniforms.uOffset.value = new THREE.Vector2(0, 0);
-        track.material.uniforms.uColor.value = track.color;
       }
     }
-    */
 
     // Render scene
     this._renderer.render(this._scene, this._camera);
