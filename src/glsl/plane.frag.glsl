@@ -22,6 +22,6 @@ void main() {
   uvRandom.y *= grain(vec2(uvRandom.y, amount));
   color.rgb += grain(uvRandom) * 0.1;
 
-  gl_FragColor = vec4(color, (1.0 - vUV.y) * vAudioData);
+  gl_FragColor = vec4(color, vUV.y);
   // gl_FragColor = vec4(color, vUV.y);
 }

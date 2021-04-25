@@ -33,12 +33,31 @@ class Patterns {
     this._THRESHOLD = 0.65;
 
     this._colors = [
-      new THREE.Color(0x9e7de5),
-      new THREE.Color(0xe8534f),
-      new THREE.Color(0xffa763),
-      new THREE.Color(0x8cdaf1),
-      new THREE.Color(0x5f83ff),
+      new THREE.Color("#8cdabf"), // Bass
+      new THREE.Color("#e8716e"), // Voice + Synth
+      new THREE.Color("#b9a4e5"), // Pads & Chords
+      new THREE.Color("#90a9ff"), // Percussion
+      new THREE.Color("#ffc188"), // Guitar + Outro
     ];
+
+    this._configuration = {
+      Bass: {
+        color: new THREE.Color("#8cdabf"),
+        shape: "",
+      },
+      "Voice+Sythesizer": {
+        color: new THREE.Color("#e8716e"),
+      },
+      "Pads+Chords": {
+        color: new THREE.Color("#b9a4e5"),
+      },
+      Percussion: {
+        color: new THREE.Color("#90a9ff"),
+      },
+      "Guitar+Outro": {
+        color: new THREE.Color("#ffc188"),
+      },
+    };
     this._angles = [0, 72, 144, 216, 288];
 
     if (process.env.NODE_ENV === "development") {
@@ -463,25 +482,29 @@ class Patterns {
         `/assets/audio/patterns.instruments/${track}`,
         (buffer) => {
           const durationFPS = Math.ceil(buffer.duration) * 60;
+          console.log("Audio name", track);
           console.log("Audio Buffer", buffer);
           console.log("Audio duration * 60 fps", durationFPS);
           this._audioDuration = buffer.duration;
           const color = this._colors[i];
           const colorChannel = i % 3;
           const yOffset = i % 2 === 1 ? 0.5 : 0.0;
+          const trackName = track.replace(".mp3", "").replace(/[0-9]-/, "");
           const patternTrack = new PatternsTrack(
             this._audioListener,
             colorChannel,
             yOffset,
-            color,
+            this._configuration[trackName].color,
             i,
             this._renderTargetSize,
-            this._audioDataTexture
+            this._audioDataTexture,
+            trackName
           );
           patternTrack.audio.setBuffer(buffer);
           patternTrack.audio.setLoop(false);
           patternTrack.audio.setVolume(1.0);
           this._patternTracks.push(patternTrack);
+          patternsLogic.actions.addPatternTrack(patternTrack);
           if (i === 0) {
             // Audio finished listener
             patternTrack.audio.onEnded = () => {
@@ -499,7 +522,7 @@ class Patterns {
       console.log((loaded / total) * 100 + "% loaded");
       if (loaded / total >= 1.0) {
         this._allLoaded = true;
-        console.log("All sounds loaded...", this._sounds);
+        console.log("All sounds loaded...");
       }
     };
   }
@@ -565,7 +588,7 @@ class Patterns {
       this._startHandle.position,
       this._endHandle.position,
       this._endSphere.position,
-      this._audioPlayProgress
+      this._audioPlayProgress - 0.15
     );
     this._controls.target.copy(samplePosition);
     this._controls.update();

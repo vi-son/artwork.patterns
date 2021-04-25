@@ -20,10 +20,33 @@ const patternLogic = kea({
     setStartHandle: (handle) => ({ point }),
     setEndPoint: (point) => ({ point }),
     setEndHandle: (handle) => ({ point }),
+
+    addPatternTrack: (track) => ({ track }),
+    updatePatternTrack: (track) => ({ track }),
+
+    addVolume: (volume) => ({ volume }),
+    updateVolume: (index, volume) => ({ index, volume }),
   },
 
   reducers: {
     trackCount: [5],
+
+    volumes: [
+      [],
+      {
+        addVolume: (state, { volume }) => [...state, volume],
+        updateVolume: (state, { index, volume }) =>
+          state.map((v, i) => (i === index ? volume : v)),
+      },
+    ],
+
+    patternTracks: [
+      [],
+      {
+        addPatternTrack: (state, { track }) => [...state, track],
+        updatePatternTrack: (state, { track }) => state,
+      },
+    ],
 
     state: [
       PATTERNS_STATES.INIT,
@@ -72,6 +95,18 @@ const patternLogic = kea({
     setState: () => {
       console.log("State change", values.state);
       values.artwork.reactOnStateChange();
+    },
+
+    setSounds: ({ sounds }) => {
+      console.log("Got sounds: ", sounds);
+    },
+
+    addPatternTrack: ({ track }) => {
+      actions.addVolume(track.audio.getVolume());
+    },
+
+    updateVolume: ({ index, volume }) => {
+      console.log(index, volume);
     },
   }),
 });

@@ -30,8 +30,10 @@ const Artwork = () => {
   const [showNarrative, setShowNarrative] = useState(false);
   const [content, setContent] = useState({});
 
-  const { state } = useValues(patternsLogic);
-  const { setState } = useActions(patternsLogic);
+  const { state, patternTracks, volumes } = useValues(patternsLogic);
+  const { setState, updatePatternTrack, updateVolume } = useActions(
+    patternsLogic
+  );
 
   useEffect(() => {
     console.group("Version");
@@ -50,6 +52,27 @@ const Artwork = () => {
         <div className="canvas-wrapper">
           <PatternsUI paused={showNarrative} />
           {/* <ArtworkContainer /> */}
+
+          <div className="sounds-ui">
+            {volumes.map((volume, i) => {
+              return (
+                <span
+                  className={`sound ${volume >= 0.5 ? "on" : "off"}`}
+                  key={i}
+                  onClick={() => {
+                    const newVolume = volume >= 0.5 ? 0.0 : 1.0;
+                    patternTracks[i].audio.setVolume(newVolume);
+                    updateVolume(i, newVolume);
+                  }}
+                >
+                  <span className="icon">{volume <= 0.5 ? "🔇" : "🔊"}</span>
+                  <span className="track-name">
+                    {patternTracks[i].trackName}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
         </div>
       }
       content={
@@ -70,7 +93,7 @@ const Artwork = () => {
 
               <ButtonEmoji
                 className="btn-set-bezier"
-                emoji="🏁"
+                emoji="🪄"
                 text="Kurve festlegen"
                 onClick={() => setState(PATTERNS_STATES.PREPARE)}
               />

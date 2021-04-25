@@ -15,7 +15,8 @@ class PatternsTrack extends THREE.Group {
     color,
     index,
     renderTargetSize,
-    audioDataTexture
+    audioDataTexture,
+    name
   ) {
     super();
 
@@ -23,6 +24,7 @@ class PatternsTrack extends THREE.Group {
     this._yOffset = yOffset;
     this._color = color;
     this._index = index;
+    this._trackName = name;
 
     this._material = new THREE.ShaderMaterial({
       vertexShader: patternVS,
@@ -60,6 +62,7 @@ class PatternsTrack extends THREE.Group {
 
   _setupAudio(audioListener) {
     this._audio = new THREE.Audio(audioListener);
+    console.log("AUDIO:", this._audio.context);
     this._analyzer = new THREE.AudioAnalyser(this._audio, 32);
   }
 
@@ -91,23 +94,53 @@ class PatternsTrack extends THREE.Group {
       let instanceGeometry;
       switch (this._index) {
         case 0:
-          // Planes
-          instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.5, 1);
-          instanceGeometry.translate(0, 0.25 + 0.25, 0);
+          // Planes/Flags
+          instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.2, 1);
+          instanceGeometry.translate(
+            (Math.random() - 0.5) / 6.0,
+            0.5,
+            (Math.random() - 0.5) / 6.0
+          );
           break;
         case 1:
           // Triangles
           instanceGeometry = new THREE.CircleBufferGeometry(0.1, 3);
-          instanceGeometry.translate(0, 0.25, 0);
+          instanceGeometry.rotateZ(Math.random() * Math.PI * 2.0);
+          instanceGeometry.translate(
+            (Math.random() - 0.5) / 6.0,
+            0.5,
+            (Math.random() - 0.5) / 6.0
+          );
           break;
         case 2:
+          // Leaves
+          instanceGeometry = new THREE.CircleBufferGeometry(0.1, 5);
+          instanceGeometry.rotateZ(Math.random() * Math.PI * 2.0);
+          instanceGeometry.translate(
+            (Math.random() - 0.5) / 6.0,
+            0.5,
+            (Math.random() - 0.5) / 6.0
+          );
+          break;
+        case 3:
           // Circles
           instanceGeometry = new THREE.CircleBufferGeometry(0.1, 32);
-          instanceGeometry.translate(0, 0.25, 0);
+          instanceGeometry.rotateZ(Math.random() * Math.PI * 2.0);
+          instanceGeometry.translate(
+            (Math.random() - 0.5) / 6.0,
+            0.5,
+            (Math.random() - 0.5) / 6.0
+          );
           break;
+        case 4:
+          // Sticks
+          instanceGeometry = new THREE.PlaneBufferGeometry(0.015, 0.6, 1);
+          instanceGeometry.translate(
+            (Math.random() - 0.5) / 6.0,
+            0.5,
+            (Math.random() - 0.5) / 6.0
+          );
         default:
-          instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.5, 1);
-          instanceGeometry.translate(0, 0.25, 0);
           break;
       }
 
@@ -142,8 +175,8 @@ class PatternsTrack extends THREE.Group {
       const offsetRotationMatrix = new THREE.Matrix4();
       const worldRotation =
         this._index * ((Math.PI * 2.0) / patternsLogic.values.trackCount);
-      const rotationAlongPath = (i / COUNT) * Math.PI * 3.0;
-      const extraRotation = Math.sin((i / COUNT) * Math.PI * 20.0) * 0.75;
+      const rotationAlongPath = (i / COUNT) * Math.PI * 1.25;
+      const extraRotation = Math.sin((i / COUNT) * Math.PI * 20.0) * 0.5;
       offsetRotationMatrix.makeRotationX(
         worldRotation + rotationAlongPath + extraRotation
       );
@@ -226,6 +259,10 @@ class PatternsTrack extends THREE.Group {
 
   get material() {
     return this._material;
+  }
+
+  get trackName() {
+    return this._trackName;
   }
 }
 

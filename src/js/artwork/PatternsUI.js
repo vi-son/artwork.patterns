@@ -97,7 +97,7 @@ const PatternsUI = ({ paused }) => {
         ].join(" ")}
         ref={canvasWrapperRef}
       >
-        <canvas ref={canvasRef}></canvas>
+        <canvas ref={canvasRef} />
       </div>
     </>
   );
