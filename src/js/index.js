@@ -13,6 +13,7 @@ import { ButtonToExhibition } from "@vi.son/components";
 import ArtworkContainer from "./artwork/ArtworkContainer.js";
 import PatternsUI from "./artwork/PatternsUI.js";
 import Intro from "./artwork/Intro.js";
+import TrackUserInterface from "./artwork/TrackUserInterface.js";
 import patternsLogic, { PATTERNS_STATES } from "./artwork/logic.patterns.js";
 // SVG imports
 import IconMouse from "@assets/svg/mouse.svg";
@@ -52,27 +53,6 @@ const Artwork = () => {
         <div className="canvas-wrapper">
           <PatternsUI paused={showNarrative} />
           {/* <ArtworkContainer /> */}
-
-          <div className="sounds-ui">
-            {volumes.map((volume, i) => {
-              return (
-                <span
-                  className={`sound ${volume >= 0.5 ? "on" : "off"}`}
-                  key={i}
-                  onClick={() => {
-                    const newVolume = volume >= 0.5 ? 0.0 : 1.0;
-                    patternTracks[i].audio.setVolume(newVolume);
-                    updateVolume(i, newVolume);
-                  }}
-                >
-                  <span className="icon">{volume <= 0.5 ? "🔇" : "🔊"}</span>
-                  <span className="track-name">
-                    {patternTracks[i].trackName}
-                  </span>
-                </span>
-              );
-            })}
-          </div>
         </div>
       }
       content={
@@ -103,12 +83,22 @@ const Artwork = () => {
           )}
           {state === PATTERNS_STATES.PREPARE ||
           state === PATTERNS_STATES.PATTERNS ? (
-            <div className="interaction-camera">
-              <IconMouse className="icon" />
-              <article className="text">
-                Klick und ziehen zum Drehen Mausrad für Zoom
-              </article>
-            </div>
+            <>
+              {/* <button */}
+              {/*   onClick={() => { */}
+              {/*     document.querySelector("canvas").requestFullscreen(); */}
+              {/*   }} */}
+              {/* > */}
+              {/*   Fullscreen */}
+              {/* </button> */}
+              <div className="interaction-camera">
+                <IconMouse className="icon" />
+                <article className="text">
+                  Klick und ziehen zum Drehen Mausrad für Zoom
+                </article>
+              </div>
+              <TrackUserInterface />
+            </>
           ) : (
             <></>
           )}

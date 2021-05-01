@@ -1,0 +1,61 @@
+.track-user-interface
+  --color-track-a: #f7f4f2
+  --color-track-b: #f1ece9
+
+  display: flex
+  flex-direction: column
+  z-index: 999999
+  pointer-events: all
+  left: 40px
+  top: 40px
+  cursor: pointer
+  box-shadow: 0 10px 30px var(--color-darkness-10)
+  overflow: hidden
+  border-radius: 3px
+  margin: 40px
+  .track
+    display: flex
+    font-size: 0.8rem
+    display: grid
+    grid-template-columns: 20ch 5ch 30vw 30px
+    background: var(--color-track-a)
+    border-bottom: 1px solid transparent
+    &:nth-child(2n)
+      background: var(--color-track-b)
+
+    .track-name
+      padding: 7px
+      padding-left: 10px
+      opacity: 0.6
+      display: flex
+      justify-content: flex-start
+      align-items: center
+      text-transform: lowercase
+
+    .sound
+      display: flex
+      flex-direction: row
+      display: flex
+      justify-content: center
+      align-items: center
+      &:hover
+        opacity: 0.5
+
+    .timeline
+      height: 100%
+      width: 100%
+      display: flex
+      .progress
+        background: var(--color-darkness)
+        height: 100%
+
+    .shape
+      height: 22px
+      display: flex
+      justify-content: center
+      align-items: center
+      align-self: center
+      svg
+        transform: rotate(45deg)
+        width: 100%
+        height: 100%

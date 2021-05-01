@@ -28,9 +28,10 @@ class Patterns {
     console.log("Size: ", this._size);
     this._clock = new THREE.Clock();
     this._$t = this._clock.getElapsedTime();
+    this._audioStartedAt = 0;
     this._$f = 0;
 
-    this._THRESHOLD = 0.65;
+    this._thresholds = [0.1, 0.4, 0.35, 0.25, 0.15];
 
     this._colors = [
       new THREE.Color("#8cdabf"), // Bass
@@ -196,12 +197,15 @@ class Patterns {
       antialias: 1,
       alpha: true,
     });
+    // this._renderer.outputEncoding = THREE.LinearToneMapping;
+    // this._renderer.toneMapping = THREE.LinearToneMapping;
+    // this._renderer.toneMappingExposure = 0.95;
     this._renderer.setSize(this._size.width, this._size.height);
     this._renderer.autoClear = false;
     this._renderer.setAnimationLoop(this._renderLoop.bind(this));
     // Camera
     this._camera = new THREE.PerspectiveCamera(
-      60,
+      45,
       this._size.width / this._size.height,
       0.1,
       1000
@@ -220,7 +224,7 @@ class Patterns {
     this._controls.target.set(0, 0.5, 0);
     this._controls.update();
     this._controls.enableZoom = true;
-    this._controls.dampingFactor = 0.9;
+    this._controls.dampingFactor = 0.1;
     // Event listener
     this._pointerMoveListener = this._canvas.addEventListener(
       "pointermove",
@@ -498,7 +502,8 @@ class Patterns {
             i,
             this._renderTargetSize,
             this._audioDataTexture,
-            trackName
+            trackName,
+            this._thresholds[i]
           );
           patternTrack.audio.setBuffer(buffer);
           patternTrack.audio.setLoop(false);
@@ -588,7 +593,7 @@ class Patterns {
       this._startHandle.position,
       this._endHandle.position,
       this._endSphere.position,
-      this._audioPlayProgress - 0.15
+      this._audioPlayProgress - 0.05
     );
     this._controls.target.copy(samplePosition);
     this._controls.update();
@@ -711,6 +716,7 @@ class Patterns {
     this._renderer.setAnimationLoop(this._renderLoop.bind(this));
     this._clock.start();
     this._patternTracks.map((pt) => pt.audio.play());
+    this._audioStartedAt = this._patternTracks[0]?.audio?.context.currentTime;
   }
 
   reactOnStateChange() {
@@ -794,7 +800,7 @@ class Patterns {
       const yOffset =
         track.yOffset * this._renderTargetSize.y * this._renderTargetSize.x * 3;
       this._data[yOffset + (this._$f * 3 + track.colorChannel)] =
-        audioValue > this._THRESHOLD ? audioValue : 0.0;
+        audioValue > track.threshold ? audioValue : 0.0;
       this._audioDataTexture.needsUpdate = true;
 
       // Update patterns material
@@ -809,8 +815,9 @@ class Patterns {
 
     // Calculate audio things
     if (this._allLoaded) {
-      const t = this._audioListener.context.currentTime;
+      const t = this._audioListener.context.currentTime - this._audioStartedAt;
       this._audioPlayProgress = t / this._audioDuration;
+      patternsLogic.actions.updatePlayProgress(this._audioPlayProgress);
     }
 
     if (this._stats !== undefined) {

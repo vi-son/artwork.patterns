@@ -26,9 +26,18 @@ const patternLogic = kea({
 
     addVolume: (volume) => ({ volume }),
     updateVolume: (index, volume) => ({ index, volume }),
+
+    updatePlayProgress: (time) => ({ time }),
   },
 
   reducers: {
+    playProgress: [
+      0,
+      {
+        updatePlayProgress: (_, { time }) => time,
+      },
+    ],
+
     trackCount: [5],
 
     volumes: [

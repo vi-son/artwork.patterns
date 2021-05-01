@@ -16,7 +16,8 @@ class PatternsTrack extends THREE.Group {
     index,
     renderTargetSize,
     audioDataTexture,
-    name
+    name,
+    threshold
   ) {
     super();
 
@@ -25,13 +26,17 @@ class PatternsTrack extends THREE.Group {
     this._color = color;
     this._index = index;
     this._trackName = name;
+    this._threshold = threshold;
 
     this._material = new THREE.ShaderMaterial({
       vertexShader: patternVS,
       fragmentShader: patternFS,
       uniforms: {
+        uGradient: { value: false },
         uFrame: { value: 0 },
+        uThreshold: { value: this._threshold },
         uColor: { value: this._color },
+        uColorOffset: { value: this._color.clone().offsetHSL(0.0, 0.05, 0.2) },
         uOffset: {
           value: new THREE.Vector2(this._colorChannel, this._yOffset),
         },
@@ -45,6 +50,8 @@ class PatternsTrack extends THREE.Group {
       },
       side: THREE.DoubleSide,
       transparent: true,
+      alhpaToCoverage: true,
+      ahpaTest: 0.01,
       // depthWrite: true,
       // depthTest: true,
       // blending: THREE.NormalBlending,
@@ -62,7 +69,6 @@ class PatternsTrack extends THREE.Group {
 
   _setupAudio(audioListener) {
     this._audio = new THREE.Audio(audioListener);
-    console.log("AUDIO:", this._audio.context);
     this._analyzer = new THREE.AudioAnalyser(this._audio, 32);
   }
 
@@ -81,9 +87,6 @@ class PatternsTrack extends THREE.Group {
     this._material.uniforms.uCount.value = COUNT;
     this._material.needsUpdate = true;
 
-    console.log("Count: ", COUNT);
-    console.log("sampleCount: ", sampleCount);
-
     let matrix = new THREE.Matrix4();
     let position = new THREE.Vector3();
     const rotationMatrix = new THREE.Matrix4();
@@ -95,10 +98,11 @@ class PatternsTrack extends THREE.Group {
       switch (this._index) {
         case 0:
           // Planes/Flags
-          instanceGeometry = new THREE.PlaneBufferGeometry(0.05, 0.2, 1);
+          this._material.uniforms.uGradient.value = true;
+          instanceGeometry = new THREE.PlaneBufferGeometry(0.2, 1.5, 1);
           instanceGeometry.translate(
             (Math.random() - 0.5) / 6.0,
-            0.5,
+            1.5,
             (Math.random() - 0.5) / 6.0
           );
           break;
@@ -113,7 +117,7 @@ class PatternsTrack extends THREE.Group {
           );
           break;
         case 2:
-          // Leaves
+          // Polygon
           instanceGeometry = new THREE.CircleBufferGeometry(0.1, 5);
           instanceGeometry.rotateZ(Math.random() * Math.PI * 2.0);
           instanceGeometry.translate(
@@ -134,6 +138,7 @@ class PatternsTrack extends THREE.Group {
           break;
         case 4:
           // Sticks
+          this._material.uniforms.uGradient.value = true;
           instanceGeometry = new THREE.PlaneBufferGeometry(0.015, 0.6, 1);
           instanceGeometry.translate(
             (Math.random() - 0.5) / 6.0,
@@ -237,6 +242,10 @@ class PatternsTrack extends THREE.Group {
     return this._instanceMesh;
   }
 
+  get index() {
+    return this._index;
+  }
+
   get audio() {
     return this._audio;
   }
@@ -263,6 +272,10 @@ class PatternsTrack extends THREE.Group {
 
   get trackName() {
     return this._trackName;
+  }
+
+  get threshold() {
+    return this._threshold;
   }
 }
 
