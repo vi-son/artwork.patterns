@@ -36,7 +36,9 @@ class PatternsTrack extends THREE.Group {
         uFrame: { value: 0 },
         uThreshold: { value: this._threshold },
         uColor: { value: this._color },
-        uColorOffset: { value: this._color.clone().offsetHSL(0.0, 0.05, 0.2) },
+        uColorOffset: {
+          value: this._color.clone().offsetHSL(0.0, -0.25, -0.25),
+        },
         uOffset: {
           value: new THREE.Vector2(this._colorChannel, this._yOffset),
         },
@@ -51,10 +53,9 @@ class PatternsTrack extends THREE.Group {
       side: THREE.DoubleSide,
       transparent: true,
       alhpaToCoverage: true,
-      ahpaTest: 0.01,
-      // depthWrite: true,
-      // depthTest: true,
-      // blending: THREE.NormalBlending,
+      depthWrite: true,
+      depthTest: true,
+      // blending: THREE.SubtractiveBlending,
     });
 
     console.group("New Patterns Track");
@@ -99,10 +100,10 @@ class PatternsTrack extends THREE.Group {
         case 0:
           // Planes/Flags
           this._material.uniforms.uGradient.value = true;
-          instanceGeometry = new THREE.PlaneBufferGeometry(0.2, 1.5, 1);
+          instanceGeometry = new THREE.PlaneBufferGeometry(0.2, 1.25, 1);
           instanceGeometry.translate(
             (Math.random() - 0.5) / 6.0,
-            1.5,
+            1.25,
             (Math.random() - 0.5) / 6.0
           );
           break;
@@ -139,7 +140,7 @@ class PatternsTrack extends THREE.Group {
         case 4:
           // Sticks
           this._material.uniforms.uGradient.value = true;
-          instanceGeometry = new THREE.PlaneBufferGeometry(0.015, 0.6, 1);
+          instanceGeometry = new THREE.PlaneBufferGeometry(0.03, 0.6, 1);
           instanceGeometry.translate(
             (Math.random() - 0.5) / 6.0,
             0.5,

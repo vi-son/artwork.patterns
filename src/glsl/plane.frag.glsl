@@ -22,7 +22,7 @@ float remap(in float value, in float min1, in float max1, in float min2, in floa
 }
 
 void main() {
-  float mixer = remap(vAudioData, uThreshold, 1.0, 0.0, 1.0);
+  float mixer = remap(pow(vAudioData, 0.5), uThreshold, 1.0, 0.0, 1.0);
   vec3 color = mix(uColorOffset, uColor, mixer);
 
   float amount = 0.5;
@@ -30,9 +30,9 @@ void main() {
   uvRandom.y *= grain(vec2(uvRandom.y, amount));
   color.rgb += grain(uvRandom) * 0.1;
 
-  if (uGradient) {
-    gl_FragColor = vec4(color, vUV.y);
-  } else {
-    gl_FragColor = vec4(color, 1.0);
-  }
+  // if (uGradient) {
+    gl_FragColor = vec4(color, vUV.y + grain(uvRandom) * 0.1);
+  // } else {
+  //   gl_FragColor = vec4(color, 1.0);
+  // }
 }

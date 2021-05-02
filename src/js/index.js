@@ -103,11 +103,19 @@ const Artwork = () => {
             <></>
           )}
           {state === PATTERNS_STATES.FINISH ? (
-            <ButtonEmoji
-              className="btn-to-overview"
-              emoji="👁"
-              onClick={() => setState(PATTERNS_STATES.OVERVIEW)}
-            />
+            <>
+              <div className="interaction-camera">
+                <IconMouse className="icon" />
+                <article className="text">
+                  Klick und ziehen zum Drehen Mausrad für Zoom
+                </article>
+              </div>
+              <ButtonEmoji
+                className="btn-to-overview"
+                emoji="🔎"
+                onClick={() => setState(PATTERNS_STATES.OVERVIEW)}
+              />
+            </>
           ) : (
             <></>
           )}

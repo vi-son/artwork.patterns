@@ -58,7 +58,8 @@ $font-root: "@vi.son/rouge/fonts"
   .btn-to-exhibition
     pointer-events: all
 
-  .btn-set-bezier
+  .btn-set-bezier,
+  .btn-to-overview
     margin-bottom: 100px
     +until($tablets)
       margin-left: 30px
@@ -130,3 +131,11 @@ $font-root: "@vi.son/rouge/fonts"
 
 button
   pointer-events: all
+
+.dg
+  &.ac
+    *
+      font-size: 11px
+
+.btn-open-narrative
+  box-shadow: 0 10px 30px var(--color-ultradark-5)

@@ -28,7 +28,7 @@ class Patterns {
     console.log("Size: ", this._size);
     this._clock = new THREE.Clock();
     this._$t = this._clock.getElapsedTime();
-    this._audioStartedAt = 0;
+    this._audioStartedAt = -1;
     this._$f = 0;
 
     this._thresholds = [0.1, 0.4, 0.35, 0.25, 0.15];
@@ -68,6 +68,31 @@ class Patterns {
       document.body.appendChild(this._stats.dom);
       // Gui
       this._gui = new dat.GUI();
+      const toneMappingOptions = {
+        None: THREE.NoToneMapping,
+        Linear: THREE.LinearToneMapping,
+        Reinhard: THREE.ReinhardToneMapping,
+        Cineon: THREE.CineonToneMapping,
+        ACESFilmic: THREE.ACESFilmicToneMapping,
+        Custom: THREE.CustomToneMapping,
+      };
+      const effectController = {
+        toneMappingExposure: 1.0,
+        toneMapping: THREE.NoToneMapping,
+      };
+      const guiChanged = () => {
+        this._renderer.toneMappingExposure = effectController.exposure;
+        this._updateScene(this._scene);
+      };
+      this._gui
+        .add(effectController, "toneMappingExposure", 0.0, 2.0, 0.001)
+        .onChange(guiChanged);
+      this._gui
+        .add(effectController, "toneMapping", Object.keys(toneMappingOptions))
+        .onChange((val) => {
+          this._renderer.toneMapping = toneMappingOptions[val];
+          this._updateScene(this._scene);
+        });
     }
 
     this._allLoaded = false;
@@ -78,6 +103,20 @@ class Patterns {
     this._initRaycasting();
     this._setupAudioAnalysis();
     this._loadSounds();
+  }
+
+  _updateScene(node) {
+    if (node.children.length === 0) {
+      return;
+    } else {
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+        if (child.material) {
+          child.material.needsUpdate = true;
+        }
+        this._updateScene(child);
+      }
+    }
   }
 
   _setupAudioAnalysis() {
@@ -197,9 +236,7 @@ class Patterns {
       antialias: 1,
       alpha: true,
     });
-    // this._renderer.outputEncoding = THREE.LinearToneMapping;
-    // this._renderer.toneMapping = THREE.LinearToneMapping;
-    // this._renderer.toneMappingExposure = 0.95;
+    this._renderer.outputEncoding = THREE.LinearEncoding;
     this._renderer.setSize(this._size.width, this._size.height);
     this._renderer.autoClear = false;
     this._renderer.setAnimationLoop(this._renderLoop.bind(this));
@@ -224,7 +261,11 @@ class Patterns {
     this._controls.target.set(0, 0.5, 0);
     this._controls.update();
     this._controls.enableZoom = true;
-    this._controls.dampingFactor = 0.1;
+    this._controls.enableDamping = true;
+    this._controls.enableZoom = true;
+    this._controls.dampingFactor = 0.01;
+    this._controls.minPolarAngle = 0.125;
+    this._controls.maxPolarAngle = Math.PI - 0.125;
     // Event listener
     this._pointerMoveListener = this._canvas.addEventListener(
       "pointermove",
@@ -391,7 +432,7 @@ class Patterns {
     );
     this._playhead.position.copy(samplePosition);
     this._playhead.add(playheadMesh);
-    this._scene.add(this._playhead);
+    // this._scene.add(this._playhead);
 
     // Arrow Helper
     const dir = new THREE.Vector3(0, 1, 0);
@@ -571,15 +612,15 @@ class Patterns {
         this._controls.target.set(fromTarget.x, fromTarget.y, fromTarget.z);
         this._controls.update();
       })
-      .onComplete(() => {
-        this._controls.enabled = true;
-      })
       .easing(TWEEN.Easing.Quadratic.InOut)
       .delay(1500);
     const cameraTween = new TWEEN.Tween(fromCamera).to(toCamera, 3000);
     cameraTween
       .onUpdate(() => {
         this._camera.position.set(fromCamera.x, fromCamera.y, fromCamera.z);
+      })
+      .onComplete(() => {
+        this._controls.enabled = true;
       })
       .easing(TWEEN.Easing.Quadratic.InOut)
       .delay(1500);
@@ -815,15 +856,16 @@ class Patterns {
 
     // Calculate audio things
     if (this._allLoaded) {
-      const t = this._audioListener.context.currentTime - this._audioStartedAt;
-      this._audioPlayProgress = t / this._audioDuration;
-      patternsLogic.actions.updatePlayProgress(this._audioPlayProgress);
+      const t = this._audioListener.context.currentTime;
+      this._audioPlayProgress =
+        (t - this._audioStartedAt) / this._audioDuration;
     }
 
     if (this._stats !== undefined) {
       this._stats.update();
     }
-    if (this._audioPlayProgress <= 1.0) {
+    if (this._audioPlayProgress <= 1.0 && this._audioStartedAt > 0) {
+      patternsLogic.actions.updatePlayProgress(this._audioPlayProgress);
       this._$f++;
     }
   }
