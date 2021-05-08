@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48px" height="48px" viewBox="0 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icons/fullscreen</title>
+    <g id="icons/fullscreen" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(7.000000, 7.000000)" fill="#000000">
+            <path d="M3,3 L3,0 L23,0 L23,3 L3,3 L3,23 L0,23 L3.55271368e-15,3 L3,3 Z" id="Combined-Shape"></path>
+            <path d="M15,15 L15,35 L12,35 L12,15 L15,15 Z M35,12 L35,15 L15,15 L15,12 L35,12 Z" id="Combined-Shape" transform="translate(23.500000, 23.500000) rotate(-180.000000) translate(-23.500000, -23.500000) "></path>
+        </g>
+    </g>
+</svg>

@@ -25,10 +25,11 @@
   "homepage": "https://github.com/vi-son/template.artwort#readme",
   "devDependencies": {
     "@babel/core": "^7.14.0",
-    "@babel/preset-env": "^7.14.0",
+    "@babel/preset-env": "^7.14.1",
     "@babel/preset-react": "^7.13.13",
     "@svgr/webpack": "^5.5.0",
     "@tweenjs/tween.js": "^18.6.4",
+    "@types/three": "^0.127.1",
     "@vi.son/rouge": "^1.0.7",
     "babel-loader": "^8.2.2",
     "blueimp-md5": "^2.18.0",
@@ -54,16 +55,19 @@
     "three-quaternion-from-normal": "^1.0.0",
     "tween.js": "^16.6.0",
     "webpack": "^5.36.2",
-    "webpack-cli": "^4.6.0",
+    "webpack-cli": "^4.7.0",
     "webpack-dev-server": "^3.11.2",
     "workbox-webpack-plugin": "^6.1.5"
   },
   "dependencies": {
-    "@vi.son/components": "^0.0.10",
+    "@vi.son/components": "^0.0.11",
     "favicons": "^6.2.1",
-    "kea": "^2.3.8",
+    "kea": "^2.4.0",
+    "kea-typegen": "^0.7.1",
     "react-redux": "^7.2.4",
     "redux": "^4.1.0",
-    "reselect": "^4.0.0"
+    "reselect": "^4.0.0",
+    "ts-loader": "^9.1.2",
+    "typescript": "^4.2.4"
   }
 }

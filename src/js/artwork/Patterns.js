@@ -217,7 +217,7 @@ class Patterns {
           this._endSphere
         );
         this._scene.add(mesh);
-        if (i === this._patternTracks.length) {
+        if (i === this._patternTracks.length - 1) {
           resolve();
         }
       });
@@ -261,7 +261,6 @@ class Patterns {
     this._controls.target.set(0, 0.5, 0);
     this._controls.update();
     this._controls.enableZoom = true;
-    this._controls.enableDamping = true;
     this._controls.enableZoom = true;
     this._controls.dampingFactor = 0.01;
     this._controls.minPolarAngle = 0.125;
@@ -386,7 +385,6 @@ class Patterns {
         this._endSphere.position,
         this._audioPlayProgress
       );
-      this._playhead.position.copy(samplePosition);
     });
     this._dragGroup = new THREE.Group();
     this._scene.add(this._handlesGroup);
@@ -413,48 +411,6 @@ class Patterns {
       handleLinesMaterial
     );
     this._scene.add(this._endHandleLine);
-
-    // Play head
-    this._playhead = new THREE.Group();
-
-    const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const boxMaterial = new THREE.MeshBasicMaterial({ color: 0x2b13ff });
-    const playheadMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-    const playheadSize = 0.05;
-    playheadMesh.scale.set(playheadSize, playheadSize, playheadSize);
-
-    const samplePosition = sample(
-      this._startSphere.position,
-      this._startHandle.position,
-      this._endHandle.position,
-      this._endSphere.position,
-      this._audioPlayProgress
-    );
-    this._playhead.position.copy(samplePosition);
-    this._playhead.add(playheadMesh);
-    // this._scene.add(this._playhead);
-
-    // Arrow Helper
-    const dir = new THREE.Vector3(0, 1, 0);
-    // normalize the direction vector (convert to vector of length 1)
-    dir.normalize();
-    const origin = new THREE.Vector3(0, 0, 0);
-    const length = 0.2;
-    const hexN = 0xff0000;
-    const hexT = 0x00ff00;
-    const hexBT = 0x0000ff;
-    // Arrow Helper
-    this._arrowHelperNormal = new THREE.ArrowHelper(dir, origin, length, hexN);
-    this._arrowHelperTangent = new THREE.ArrowHelper(dir, origin, length, hexT);
-    this._arrowHelperBitangent = new THREE.ArrowHelper(
-      dir,
-      origin,
-      length,
-      hexBT
-    );
-    this._playhead.add(this._arrowHelperNormal);
-    this._playhead.add(this._arrowHelperTangent);
-    this._playhead.add(this._arrowHelperBitangent);
 
     // Tube/Bezier spline
     const numSides = 8;
@@ -640,43 +596,6 @@ class Patterns {
     this._controls.update();
   }
 
-  _updatePlane(t) {
-    // Update normals
-    const samplePosition = sample(
-      this._startSphere.position,
-      this._startHandle.position,
-      this._endHandle.position,
-      this._endSphere.position,
-      t
-    );
-    const { normal, bitangent, tangent } = calculateFrame(
-      this._startSphere.position,
-      this._startHandle.position,
-      this._endHandle.position,
-      this._endSphere.position,
-      t
-    );
-
-    this._arrowHelperNormal.position.copy(samplePosition);
-    this._arrowHelperNormal.setDirection(normal);
-    this._arrowHelperTangent.position.copy(samplePosition);
-    this._arrowHelperTangent.setDirection(tangent);
-    this._arrowHelperBitangent.position.copy(samplePosition);
-    this._arrowHelperBitangent.setDirection(bitangent);
-
-    const rotationMatrix = new THREE.Matrix4();
-    rotationMatrix.makeBasis(
-      tangent.normalize(),
-      normal.normalize(),
-      bitangent.normalize()
-    );
-
-    if (this._playhead) {
-      this._playhead.position.copy(samplePosition);
-      this._playhead.quaternion.setFromRotationMatrix(rotationMatrix);
-    }
-  }
-
   handleKeyUp(e) {
     console.log(e);
     if (e.key === "e") {
@@ -769,6 +688,7 @@ class Patterns {
       case PATTERNS_STATES.BEZIER_SETUP:
         this._dragControls.enabled = true;
         this._dragControls.activate();
+        this._controls.enableDamping = false;
         break;
       case PATTERNS_STATES.PREPARE:
         this._dragControls.enabled = false;
@@ -776,8 +696,7 @@ class Patterns {
         this._buildInstanceGeometries();
         break;
       case PATTERNS_STATES.PATTERNS:
-        this._dragControls.enabled = false;
-        this._dragControls.deactivate();
+        this._controls.enableDamping = true;
         this.continue();
         break;
       case PATTERNS_STATES.FINISH:
@@ -785,6 +704,7 @@ class Patterns {
         this._dragControls.deactivate();
         break;
       case PATTERNS_STATES.OVERVIEW:
+        this._controls.enableDamping = true;
         this._lookAtCenter();
         break;
       default:
@@ -827,9 +747,14 @@ class Patterns {
       this._endHandleLine.geometry.attributes.position.needsUpdate = true;
     }
 
-    // @TODO
-    if (patternsLogic.values.state === PATTERNS_STATES.PREPARE) {
+    if (
+      patternsLogic.values.state === PATTERNS_STATES.PREPARE ||
+      patternsLogic.values.state === PATTERNS_STATES.PATTERNS
+    ) {
       this._lookAtSamplePosition();
+    }
+    if (patternsLogic.values.state === PATTERNS_STATES.OVERVIEW) {
+      this._controls.update();
     }
 
     for (let i = 0; i < this._patternTracks.length; i++) {

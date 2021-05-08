@@ -14,7 +14,9 @@ import ArtworkContainer from "./artwork/ArtworkContainer.js";
 import PatternsUI from "./artwork/PatternsUI.js";
 import Intro from "./artwork/Intro.js";
 import TrackUserInterface from "./artwork/TrackUserInterface.js";
-import patternsLogic, { PATTERNS_STATES } from "./artwork/logic.patterns.js";
+import patternsLogic, { PATTERNS_STATES } from "./artwork/logic.patterns";
+import IconFullscreen from "./icons/Fullscreen.js";
+import IconExitFullscreen from "./icons/ExitFullscreen.js";
 // SVG imports
 import IconMouse from "@assets/svg/mouse.svg";
 // Style imports
@@ -30,6 +32,7 @@ resetContext({
 const Artwork = () => {
   const [showNarrative, setShowNarrative] = useState(false);
   const [content, setContent] = useState({});
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const { state, patternTracks, volumes } = useValues(patternsLogic);
   const { setState, updatePatternTrack, updateVolume } = useActions(
@@ -44,13 +47,29 @@ const Artwork = () => {
       console.log(d);
       setContent(d.content);
     });
+
+    [
+      "fullscreenchange",
+      "webkitfullscreenchange",
+      "mozfullscreenchange",
+      "msfullscreenchange",
+    ].forEach((eventType) =>
+      document.addEventListener(eventType, handleFullscreen, false)
+    );
   }, []);
+
+  const handleFullscreen = () => {
+    setIsFullscreen(window.fullScreen);
+  };
 
   return (
     <ExhibitionLayout
       showAside={showNarrative}
       fixed={
         <div className="canvas-wrapper">
+          {process.env.NODE_ENV === "development" && (
+            <h1 className="state">{state}</h1>
+          )}
           <PatternsUI paused={showNarrative} />
           {/* <ArtworkContainer /> */}
         </div>
@@ -70,7 +89,6 @@ const Artwork = () => {
                   Um die Kurve zu gestalten, verziehe die roten Punkte
                 </article>
               </div>
-
               <ButtonEmoji
                 className="btn-set-bezier"
                 emoji="🪄"
@@ -120,6 +138,15 @@ const Artwork = () => {
             <></>
           )}
           <ButtonToExhibition withText={false} />
+          <ButtonEmoji
+            className="btn-fullscreen"
+            emoji={isFullscreen ? <IconExitFullscreen /> : <IconFullscreen />}
+            onClick={() =>
+              isFullscreen
+                ? document.exitFullscreen()
+                : document.body.requestFullscreen()
+            }
+          />
           <ButtonOpenNarrative
             showNarrative={showNarrative}
             setShowNarrative={setShowNarrative}

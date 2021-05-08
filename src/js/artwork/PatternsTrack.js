@@ -110,6 +110,7 @@ class PatternsTrack extends THREE.Group {
         case 1:
           // Triangles
           instanceGeometry = new THREE.CircleBufferGeometry(0.1, 3);
+          instanceGeometry.rotateX(Math.PI * Math.random());
           instanceGeometry.rotateZ(Math.random() * Math.PI * 2.0);
           instanceGeometry.translate(
             (Math.random() - 0.5) / 6.0,
@@ -120,6 +121,7 @@ class PatternsTrack extends THREE.Group {
         case 2:
           // Polygon
           instanceGeometry = new THREE.CircleBufferGeometry(0.1, 5);
+          instanceGeometry.rotateX(Math.PI * Math.random());
           instanceGeometry.rotateZ(Math.random() * Math.PI * 2.0);
           instanceGeometry.translate(
             (Math.random() - 0.5) / 6.0,
@@ -130,6 +132,7 @@ class PatternsTrack extends THREE.Group {
         case 3:
           // Circles
           instanceGeometry = new THREE.CircleBufferGeometry(0.1, 32);
+          instanceGeometry.rotateX(Math.PI * Math.random());
           instanceGeometry.rotateZ(Math.random() * Math.PI * 2.0);
           instanceGeometry.translate(
             (Math.random() - 0.5) / 6.0,

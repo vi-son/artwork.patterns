@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48px" height="48px" viewBox="0 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icons/exit-fullscreen</title>
+    <g id="icons/exit-fullscreen" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M38,12.6249768 L35.3750232,10 L24,21.3750232 L12.6249768,10 L10,12.6249768 L21.3750232,24 L10,35.3750232 L12.6249768,38 L24,26.6249768 L35.3750232,38 L38,35.3750232 L26.6249768,24 L38,12.6249768 Z M26.6249768,24 L24,26.6249768 L21.3750232,24 L24,21.3750232 L26.6249768,24 Z" id="x" fill="#000000"></path>
+    </g>
+</svg>

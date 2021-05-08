@@ -32,6 +32,8 @@ $font-root: "@vi.son/rouge/fonts"
 
 .canvas-wrapper
   width: 100vw
+  max-height: 100vh
+  overflow-y: hidden
   height: 100vh
   padding: 0
   margin: 0
@@ -39,8 +41,21 @@ $font-root: "@vi.son/rouge/fonts"
   top: 0
   left: 0
   cursor: grab
+  .state
+    font-family: monospace
+    font-size: 1.0rem
+    z-index: 999999
+    position: fixed
+    left: 10px
+    top: 10px
+
+.fixed-content
+  max-height: 100vh
+  overflow-y: hidden
 
 .layout-exhibition
+  max-height: 100vh
+  overflow-y: hidden
   .main-content
     flex-direction: column
     justify-content: space-between
@@ -58,8 +73,24 @@ $font-root: "@vi.son/rouge/fonts"
   .btn-to-exhibition
     pointer-events: all
 
+  .btn-fullscreen
+    position: fixed
+    pointer-events: all
+    left: calc(100vw - 190px)
+    bottom: 100px
+    &:hover
+      .emoji
+        color: var(--color-snow)
+    .emoji
+      color: var(--color-curacao)
+    +until($desktops)
+      top: 100px
+      bottom: auto
+      left: calc(100vw - 110px)
+
   .btn-set-bezier,
-  .btn-to-overview
+  .btn-to-overview,
+  .btn-fullscreen
     margin-bottom: 100px
     +until($tablets)
       margin-left: 30px
