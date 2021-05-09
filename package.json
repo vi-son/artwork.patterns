@@ -1,6 +1,6 @@
 {
   "name": "artwork.running-patterns",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Running Patterns/Laufende Muster artwork for the vi.son - mixing-senses project",
   "main": "src/js/index.js",
   "scripts": {
