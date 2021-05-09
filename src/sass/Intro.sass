@@ -9,18 +9,19 @@
   justify-content: center
   flex-grow: 1
   align-self: center
+  animation: fade-in-down 1s 1.5s ease
+  animation-fill-mode: both
+  transform: translateY(-200px)
+  padding: 120px 0
   +until($tablets)
-    margin: 0 20px
+    margin: 0 40px
   +from($tablets)
     max-width: 60ch
   +from($desktops)
     max-width: 80ch
-  animation: fade-in-down 1s 1.5s ease
-  animation-fill-mode: both
-  transform: translateY(-200px)
 
   .content
-    padding: 60px auto
+    padding: 120px auto
     display: flex
     flex-direction: column
 

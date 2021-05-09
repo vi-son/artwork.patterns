@@ -25,6 +25,8 @@ module.exports = (env) => {
     mode: "development",
     devServer: {
       port: 8888,
+      host: "0.0.0.0",
+      useLocalIp: true,
       historyApiFallback: true,
     },
     entry: {

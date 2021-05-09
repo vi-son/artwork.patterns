@@ -1,3 +1,6 @@
+@import @vi.son/rouge/1-settings/_breakpoints.sass
+@import @vi.son/rouge/2-tools/_media-queries.sass
+
 .track-user-interface
   --color-track-a: #f7f4f2
   --color-track-b: #f1ece9
@@ -13,24 +16,37 @@
   overflow: hidden
   border-radius: 3px
   margin: 40px
+  +until($tablets)
+    align-self: flex-start
+    margin: 20px
+
   .track
     display: flex
     font-size: 0.8rem
-    display: grid
-    grid-template-columns: 20ch 5ch 30vw 30px
     background: var(--color-track-a)
     border-bottom: 1px solid transparent
+    justify-content: space-between
+    flex-grow: 1
+    align-items: space-between
     &:nth-child(2n)
       background: var(--color-track-b)
+    +from($desktops)
+      display: grid
+      grid-template-columns: 20ch 5ch 30vw 30px
 
     .track-name
+      height: 100%
+      width: 100%
+      min-width: calc(100% - 20px)
       padding: 7px
       padding-left: 10px
-      opacity: 0.6
       display: flex
-      justify-content: flex-start
-      align-items: center
       text-transform: lowercase
+      flex-grow: 1
+      width: 100%
+      +from($desktops)
+        justify-content: space-between
+        align-items: space-between
 
     .sound
       display: flex
@@ -40,6 +56,8 @@
       align-items: center
       &:hover
         opacity: 0.5
+      +until($desktops)
+        justify-self: flex-end
 
     .timeline
       height: 100%

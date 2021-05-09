@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { useValues, useActions, resetContext, getContext } from "kea";
+import { utils } from "@vi.son/components";
+const { mobileCheck } = utils;
 // Local imports
 import { get } from "./api.js";
 import { ExhibitionLayout } from "@vi.son/components";
@@ -19,6 +21,7 @@ import IconFullscreen from "./icons/Fullscreen.js";
 import IconExitFullscreen from "./icons/ExitFullscreen.js";
 // SVG imports
 import IconMouse from "@assets/svg/mouse.svg";
+import IconTouch from "@assets/svg/touchinput.svg";
 // Style imports
 import "../sass/index.sass";
 
@@ -38,6 +41,8 @@ const Artwork = () => {
   const { setState, updatePatternTrack, updateVolume } = useActions(
     patternsLogic
   );
+
+  const isMobile = mobileCheck();
 
   useEffect(() => {
     console.group("Version");
@@ -64,6 +69,7 @@ const Artwork = () => {
 
   return (
     <ExhibitionLayout
+      clickable={state === PATTERNS_STATES.INIT}
       showAside={showNarrative}
       fixed={
         <div className="canvas-wrapper">
@@ -84,15 +90,22 @@ const Artwork = () => {
                   <span>◼</span>
                   <span>●</span>
                 </span>
-                <IconMouse className="icon" />
+                {isMobile ? (
+                  <IconTouch className="icon" />
+                ) : (
+                  <IconMouse className="icon" />
+                )}
                 <article className="text">
                   Um die Kurve zu gestalten, verziehe die roten Punkte
                 </article>
               </div>
               <ButtonEmoji
-                className="btn-set-bezier"
+                className={`btn-set-bezier ${
+                  patternTracks.length < 5 && "hidden"
+                }`}
                 emoji="🪄"
                 text="Kurve festlegen"
+                withText={!isMobile}
                 onClick={() => setState(PATTERNS_STATES.PREPARE)}
               />
             </>
@@ -102,17 +115,16 @@ const Artwork = () => {
           {state === PATTERNS_STATES.PREPARE ||
           state === PATTERNS_STATES.PATTERNS ? (
             <>
-              {/* <button */}
-              {/*   onClick={() => { */}
-              {/*     document.querySelector("canvas").requestFullscreen(); */}
-              {/*   }} */}
-              {/* > */}
-              {/*   Fullscreen */}
-              {/* </button> */}
               <div className="interaction-camera">
-                <IconMouse className="icon" />
+                {isMobile ? (
+                  <IconTouch className="icon" />
+                ) : (
+                  <IconMouse className="icon" />
+                )}
                 <article className="text">
-                  Klick und ziehen zum Drehen Mausrad für Zoom
+                  {!isMobile
+                    ? "Klick und ziehen zum Drehen Mausrad für Zoom"
+                    : "Wischen zum Drehen Pinch für Zoom"}
                 </article>
               </div>
               <TrackUserInterface />
@@ -123,7 +135,11 @@ const Artwork = () => {
           {state === PATTERNS_STATES.FINISH ? (
             <>
               <div className="interaction-camera">
-                <IconMouse className="icon" />
+                {isMobile ? (
+                  <IconTouch className="icon" />
+                ) : (
+                  <IconMouse className="icon" />
+                )}
                 <article className="text">
                   Klick und ziehen zum Drehen Mausrad für Zoom
                 </article>
@@ -137,16 +153,20 @@ const Artwork = () => {
           ) : (
             <></>
           )}
-          <ButtonToExhibition withText={false} />
-          <ButtonEmoji
-            className="btn-fullscreen"
-            emoji={isFullscreen ? <IconExitFullscreen /> : <IconFullscreen />}
-            onClick={() =>
-              isFullscreen
-                ? document.exitFullscreen()
-                : document.body.requestFullscreen()
-            }
-          />
+          {state !== PATTERNS_STATES.PATTERNS && (
+            <ButtonToExhibition withText={!isMobile} />
+          )}
+          {!isMobile && (
+            <ButtonEmoji
+              className="btn-fullscreen"
+              emoji={isFullscreen ? <IconExitFullscreen /> : <IconFullscreen />}
+              onClick={() =>
+                isFullscreen
+                  ? document.exitFullscreen()
+                  : document.body.requestFullscreen()
+              }
+            />
+          )}{" "}
           <ButtonOpenNarrative
             showNarrative={showNarrative}
             setShowNarrative={setShowNarrative}

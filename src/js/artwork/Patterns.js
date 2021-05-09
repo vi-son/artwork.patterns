@@ -4,7 +4,8 @@ import { DragControls } from "three/examples/jsm/controls/DragControls.js";
 import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import TWEEN from "@tweenjs/tween.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
-import * as dat from "dat.gui";
+import { utils } from "@vi.son/components";
+const { mobileCheck } = utils;
 // Local imports
 import PatternsTrack from "./PatternsTrack.js";
 import createLineGeometry from "./createLineGeometry.js";
@@ -31,7 +32,10 @@ class Patterns {
     this._audioStartedAt = -1;
     this._$f = 0;
 
+    this._isMobile = mobileCheck();
+
     this._thresholds = [0.1, 0.4, 0.35, 0.25, 0.15];
+    this._intersects = [];
 
     this._colors = [
       new THREE.Color("#8cdabf"), // Bass
@@ -66,37 +70,8 @@ class Patterns {
       this._stats = new Stats();
       this._stats.dom.className = "stats";
       document.body.appendChild(this._stats.dom);
-      // Gui
-      this._gui = new dat.GUI();
-      const toneMappingOptions = {
-        None: THREE.NoToneMapping,
-        Linear: THREE.LinearToneMapping,
-        Reinhard: THREE.ReinhardToneMapping,
-        Cineon: THREE.CineonToneMapping,
-        ACESFilmic: THREE.ACESFilmicToneMapping,
-        Custom: THREE.CustomToneMapping,
-      };
-      const effectController = {
-        toneMappingExposure: 1.0,
-        toneMapping: THREE.NoToneMapping,
-      };
-      const guiChanged = () => {
-        this._renderer.toneMappingExposure = effectController.exposure;
-        this._updateScene(this._scene);
-      };
-      this._gui
-        .add(effectController, "toneMappingExposure", 0.0, 2.0, 0.001)
-        .onChange(guiChanged);
-      this._gui
-        .add(effectController, "toneMapping", Object.keys(toneMappingOptions))
-        .onChange((val) => {
-          this._renderer.toneMapping = toneMappingOptions[val];
-          this._updateScene(this._scene);
-        });
     }
-
     this._allLoaded = false;
-
     this._init();
     this._initBackground();
     this._initGeometry();
@@ -271,6 +246,11 @@ class Patterns {
       this.handlePointerMove.bind(this),
       false
     );
+    const touchMoveListener = this._canvas.addEventListener(
+      "touchmove",
+      this.handlePointerMove.bind(this),
+      false
+    );
     this._keyUpListener = document.addEventListener(
       "keyup",
       this.handleKeyUp.bind(this),
@@ -281,8 +261,18 @@ class Patterns {
       this.handlePointerDown.bind(this),
       false
     );
+    const touchDownListener = this._canvas.addEventListener(
+      "touchdown",
+      this.handlePointerDown.bind(this),
+      false
+    );
     const pointerUpListener = this._canvas.addEventListener(
       "pointerup",
+      this.handlePointerUp.bind(this),
+      false
+    );
+    const touchUpListener = this._canvas.addEventListener(
+      "touchup",
       this.handlePointerUp.bind(this),
       false
     );
@@ -325,11 +315,16 @@ class Patterns {
   _initGeometry() {
     // Start- & end point
     this._startPoint = new THREE.Vector3(-1, 0, 0);
-    this._endPoint = new THREE.Vector3(+1, 0, 0);
+    this._endPoint = new THREE.Vector3(1, 0, 0);
+    if (this._isMobile) {
+      this._startPoint = new THREE.Vector3(0, -1.5, 0);
+      this._endPoint = new THREE.Vector3(0, 1.5, 0);
+    }
 
     // Geometry
     this._handlesGroup = new THREE.Group();
-    const geometry = new THREE.SphereGeometry(0.02, 32, 32);
+    const handleSize = this._isMobile ? 0.05 : 0.025;
+    const geometry = new THREE.SphereGeometry(handleSize, 32, 32);
     const material = new THREE.MeshBasicMaterial({ color: 0xe8534f });
     const handleMaterial = new THREE.MeshBasicMaterial({
       color: 0xffffff,
@@ -344,13 +339,17 @@ class Patterns {
     this._handlesGroup.add(this._startSphere);
     this._handlesGroup.add(this._endSphere);
 
-    const handleGeometry = new THREE.OctahedronGeometry(0.025, 0);
+    const handleGeometry = new THREE.OctahedronGeometry(handleSize * 2.0, 0);
     this._startHandle = new THREE.Mesh(handleGeometry, handleMaterial);
     const startHandlePosition = this._startPoint.clone().divideScalar(2.0);
     startHandlePosition.y = 1.0 * Math.sin(Math.random() * Math.PI * 2.0);
     startHandlePosition.z = 1.0 * Math.cos(Math.random() * Math.PI * 2.0);
+    if (this._isMobile) {
+      startHandlePosition.x = 0.3 * Math.sin(Math.random() * Math.PI * 2.0);
+      startHandlePosition.z = 0.3 * Math.cos(Math.random() * Math.PI * 2.0);
+    }
     this._startHandle.position.copy(startHandlePosition);
-    this._startHandle.scale.set(0.5, 3, 0.5);
+    this._startHandle.scale.set(1, 1, 1);
     this._startHandle.lookAt(this._startPoint);
     this._handlesGroup.add(this._startHandle);
 
@@ -358,6 +357,10 @@ class Patterns {
     const endHandlePosition = this._endPoint.clone().divideScalar(2.0);
     endHandlePosition.y = 1.0 * Math.sin(Math.random() * Math.PI * 2.0);
     endHandlePosition.z = 1.0 * Math.cos(Math.random() * Math.PI * 2.0);
+    if (this._isMobile) {
+      endHandlePosition.x = 0.3 * Math.sin(Math.random() * Math.PI * 2.0);
+      endHandlePosition.z = 0.3 * Math.cos(Math.random() * Math.PI * 2.0);
+    }
     this._endHandle.position.copy(endHandlePosition);
     this._handlesGroup.add(this._endHandle);
 
@@ -597,57 +600,51 @@ class Patterns {
   }
 
   handleKeyUp(e) {
-    console.log(e);
-    if (e.key === "e") {
-      this._buildInstanceGeometries();
-    }
-    if (e.key === "c") {
-      this._canvas.requestFullscreen();
-    }
+    e.preventDefault();
   }
 
   handlePointerDown(e) {
+    e.preventDefault();
     this._mouseDown = true;
     this._raycaster.setFromCamera(this._mouse, this._camera);
     if (this._dragControls.enabled) {
-      const intersects = this._raycaster.intersectObjects(
+      this._intersects = this._raycaster.intersectObjects(
         this._handlesGroup.children
       );
-      if (intersects.length > 0) {
-        this._controls.enabled = false;
-        this._controls.saveState();
-      }
+    }
+    if (this._intersects.length > 0 && !this._isMobile) {
+      this._controls.enabled = false;
+      this._controls.saveState();
     }
   }
 
   handlePointerUp(e) {
-    if (!this._controls.enabled) {
+    e.preventDefault();
+    if (!this._controls.enabled && !this._isMobile) {
       this._controls.reset();
       this._controls.enabled = true;
     }
+    this._intersects = [];
     this._mouseDown = false;
   }
 
   handlePointerMove(e) {
     e.preventDefault();
-    if (this._mouseDown) {
-      return;
-    }
+    if (this._mouseDown) return;
     this._mouse.x = ((e.clientX - this._size.x) / this._size.width) * 2 - 1;
     this._mouse.y = -((e.clientY - this._size.y) / this._size.height) * 2 + 1;
 
     if (this._dragControls.enabled) {
       this._raycaster.setFromCamera(this._mouse, this._camera);
-      var intersects = this._raycaster.intersectObjects(
+      this._intersects = this._raycaster.intersectObjects(
         this._handlesGroup.children
       );
-      if (intersects.length > 0) {
-        this._controls.enabled = false;
+      if (this._intersects.length > 0) {
         // setIsDragging(true);
-        intersects[0].object.material.color.set(0x2b13ff);
-        intersects[0].object.scale.set(1.5, 1.5, 1.5);
+        this._intersects[0].object.material.color.set(0x2b13ff);
+        const dragScale = this._isMobile ? 3.0 : 1.5;
+        this._intersects[0].object.scale.set(dragScale, dragScale, dragScale);
       } else {
-        this._controls.enabled = true;
         this._handlesGroup.children.forEach((h) => {
           h.material.color.set(0xe8534f);
           h.scale.set(1.0, 1.0, 1.0);
@@ -686,6 +683,9 @@ class Patterns {
         this._dragControls.deactivate();
         break;
       case PATTERNS_STATES.BEZIER_SETUP:
+        if (this._isMobile) {
+          this._controls.enabled = false;
+        }
         this._dragControls.enabled = true;
         this._dragControls.activate();
         this._controls.enableDamping = false;
@@ -696,6 +696,13 @@ class Patterns {
         this._buildInstanceGeometries();
         break;
       case PATTERNS_STATES.PATTERNS:
+        this._startSphere.scale.set(0.5, 0.5, 0.5);
+        this._endSphere.scale.set(0.5, 0.5, 0.5);
+        this._startHandle.scale.set(0.35, 0.35, 0.35);
+        this._endHandle.scale.set(0.35, 0.35, 0.35);
+        if (this._isMobile) {
+          this._controls.enabled = true;
+        }
         this._controls.enableDamping = true;
         this.continue();
         break;
