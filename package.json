@@ -60,7 +60,7 @@
     "workbox-webpack-plugin": "^6.1.5"
   },
   "dependencies": {
-    "@vi.son/components": "file:../components",
+    "@vi.son/components": "^0.0.12",
     "favicons": "^6.2.1",
     "kea": "^2.4.0",
     "kea-typegen": "^0.7.1",
