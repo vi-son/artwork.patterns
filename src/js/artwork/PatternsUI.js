@@ -5,8 +5,6 @@ import { useActions, useValues } from "kea";
 // Local imports
 import patternsLogic, { PATTERNS_STATES } from "./logic.patterns.js";
 import Patterns from "./Patterns.js";
-// Style imports
-import "@sass/patterns.sass";
 
 const PatternsUI = ({ paused }) => {
   const canvasWrapperRef = useRef();
