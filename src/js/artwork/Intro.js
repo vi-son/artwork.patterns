@@ -15,13 +15,17 @@ const Intro = () => {
       <div className="content">
         <h2 className="heading">patterns</h2>
         <article className="text">
-          Patterns ist ein audiovisuelle Experiment. Wir lassen dich kurzer
-          Musikschnipsel (Samples) hören, zu denen du auswählst, was du fühlst,
-          spürst oder dir vorstellst.
+          Musik erscheint uns geheimnisvoll, wild, organisch, wirkmächtig,
+          mitreissend, ein Spiel zwischen Ordnung und Umbrüchen. Sie ist ein
+          Mittel, um Zeit, Emotionen und Eindrücke zu strukturieren. Mit festen,
+          harmonischen <b>Regeln der Wiederholung und Musterhaftigkeit</b> - und
+          hin und wieder überraschenden und mutigen Regelbrüchen.
           <br />
-          Zu jedem Sample hast du <b>drei Möglichkeiten</b>, von denen du eine
-          auswählst, um deinen Eindruck der Musik zuzuordnen: Emotion Farbe oder
-          Form
+          <br />
+          <b>Was wäre, wenn Musik so aussieht wie laufende Muster?</b> Dann
+          werden Soundwelten zu filigranen Skulpturen und lineares Hören tritt
+          in einen neuen Erlebnisraum ein. Mit unserem Exponat tauchst du in
+          diesen Raum ein.
           <br />
           <b>
             Viel Spaß <span className="emoji">🎉</span>
