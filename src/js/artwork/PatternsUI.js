@@ -26,15 +26,9 @@ const PatternsUI = ({ paused }) => {
     if (canvasRef.current && canvasWrapperRef.current) {
       init(new Patterns(canvasRef.current, canvasWrapperRef.current));
     }
-    return () => {
-      // canvasRef.current.removeEventListener("pointermove", pointerMoveListener);
-      // canvasRef.current.removeEventListener("pointerdown", pointerDownListener);
-      // canvasRef.current.removeEventListener("pointerup", pointerUpListener);
-    };
   }, []);
 
   useEffect(() => {
-    console.log("PAUSED: ", paused);
     if (artwork && paused) {
       artwork.pause();
     }

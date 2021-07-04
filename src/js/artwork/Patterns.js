@@ -672,6 +672,13 @@ class Patterns {
   continue() {
     this._renderer.setAnimationLoop(this._renderLoop.bind(this));
     this._clock.start();
+    if (
+      patternsLogic.values.state === PATTERNS_STATES.INIT ||
+      patternsLogic.values.state === PATTERNS_STATES.BEZIER_SETUP ||
+      patternsLogic.values.state === PATTERNS_STATES.PREPARE
+    ) {
+      return;
+    }
     this._patternTracks.map((pt) => pt.audio.play());
     this._audioStartedAt = this._patternTracks[0]?.audio?.context.currentTime;
   }
