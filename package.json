@@ -51,7 +51,7 @@
     "sass-loader": "^12.1.0",
     "shelljs": "^0.8.4",
     "style-loader": "^3.0.0",
-    "three": "^0.130.0",
+    "three": "^0.137.0",
     "three-quaternion-from-normal": "^1.0.0",
     "tween.js": "^16.6.0",
     "webpack": "^5.42.0",
