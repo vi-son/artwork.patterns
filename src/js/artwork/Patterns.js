@@ -20,6 +20,20 @@ import tubeVS from "@glsl/tubes.vert.glsl";
 import tubeFS from "@glsl/tubes.frag.glsl";
 
 const MAX_LOG = 5.541263545158426;
+const PIXEL_RATIO = 4.5;
+
+window.downloadCanvas = (selector) => {
+  const canvas = document.querySelector(selector);
+  const dataStream = canvas
+    ?.toDataURL("image/png")
+    ?.replace("image/png", "image/octet-stream");
+  if (dataStream) {
+    const link = document.createElement("a");
+    link.setAttribute("download", `${Date.now()}.png`);
+    link.setAttribute("href", dataStream);
+    link.click();
+  }
+}
 
 class Patterns {
   constructor(canvas, canvasWrapper) {
@@ -210,9 +224,11 @@ class Patterns {
       canvas: this._canvas,
       antialias: 1,
       alpha: true,
+      preserveDrawingBuffer: true,
     });
     this._renderer.outputEncoding = THREE.LinearEncoding;
     this._renderer.setSize(this._size.width, this._size.height);
+    this._renderer.setPixelRatio(PIXEL_RATIO);
     this._renderer.autoClear = false;
     this._renderer.setAnimationLoop(this._renderLoop.bind(this));
     // Camera
@@ -298,6 +314,7 @@ class Patterns {
       vertexShader: backgroundVS,
       fragmentShader: backgroundFS,
       uniforms: {
+        uPixelRatio: { value: PIXEL_RATIO },
         uResolution: {
           value: new THREE.Vector2(
             this._size.width * window.devicePixelRatio,
