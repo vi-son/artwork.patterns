@@ -12,7 +12,6 @@ import { ButtonCloseNarrative } from "@vi.son/components";
 import { ButtonEmoji } from "@vi.son/components";
 import { ButtonOpenNarrative } from "@vi.son/components";
 import { ButtonToExhibition } from "@vi.son/components";
-import ArtworkContainer from "./artwork/ArtworkContainer.js";
 import PatternsUI from "./artwork/PatternsUI.js";
 import Intro from "./artwork/Intro.js";
 import TrackUserInterface from "./artwork/TrackUserInterface.js";
@@ -37,10 +36,8 @@ const Artwork = () => {
   const [content, setContent] = useState({});
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const { state, patternTracks, volumes } = useValues(patternsLogic);
-  const { setState, updatePatternTrack, updateVolume } = useActions(
-    patternsLogic
-  );
+  const { state, patternTracks } = useValues(patternsLogic);
+  const { setState } = useActions(patternsLogic);
 
   const isMobile = mobileCheck();
 
@@ -77,7 +74,6 @@ const Artwork = () => {
             <h1 className="state">{state}</h1>
           )}
           <PatternsUI paused={showNarrative} />
-          {/* <ArtworkContainer /> */}
         </div>
       }
       content={

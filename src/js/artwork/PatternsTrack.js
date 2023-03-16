@@ -20,14 +20,13 @@ class PatternsTrack extends THREE.Group {
     threshold
   ) {
     super();
-
+    this.setupAudio(audioListener);
     this._colorChannel = colorChannel;
     this._yOffset = yOffset;
     this._color = color;
     this._index = index;
     this._trackName = name;
     this._threshold = threshold;
-
     this._material = new THREE.ShaderMaterial({
       vertexShader: patternVS,
       fragmentShader: patternFS,
@@ -64,11 +63,9 @@ class PatternsTrack extends THREE.Group {
     console.log("Y offset", this._yOffset);
     console.log("Color", this._color);
     console.groupEnd();
-
-    this._setupAudio(audioListener);
   }
 
-  _setupAudio(audioListener) {
+  setupAudio(audioListener) {
     this._audio = new THREE.Audio(audioListener);
     this._analyzer = new THREE.AudioAnalyser(this._audio, 32);
   }
@@ -239,9 +236,8 @@ class PatternsTrack extends THREE.Group {
       );
       geometries.push(instanceGeometry);
     }
-    const patternsGeometry = BufferGeometryUtils.mergeBufferGeometries(
-      geometries
-    );
+    const patternsGeometry =
+      BufferGeometryUtils.mergeBufferGeometries(geometries);
     this._instanceMesh = new THREE.Mesh(patternsGeometry, this._material);
     return this._instanceMesh;
   }

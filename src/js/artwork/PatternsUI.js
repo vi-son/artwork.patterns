@@ -29,10 +29,11 @@ const PatternsUI = ({ paused }) => {
   }, []);
 
   useEffect(() => {
-    if (artwork && paused) {
+    if (artwork === null) return;
+    if (paused) {
       artwork.pause();
     }
-    if (artwork && !paused) {
+    if (!paused) {
       artwork.continue();
     }
   }, [paused]);

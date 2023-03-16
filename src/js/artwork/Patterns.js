@@ -741,9 +741,12 @@ class Patterns {
     if (patternsLogic.values.state === PATTERNS_STATES.BEZIER_SETUP) {
       // Update bezier
       const { x, y, z } = this._startHandle.position;
-      this._startHandleLine.geometry.attributes.position.array[0] = this._startSphere.position.x;
-      this._startHandleLine.geometry.attributes.position.array[1] = this._startSphere.position.y;
-      this._startHandleLine.geometry.attributes.position.array[2] = this._startSphere.position.z;
+      this._startHandleLine.geometry.attributes.position.array[0] =
+        this._startSphere.position.x;
+      this._startHandleLine.geometry.attributes.position.array[1] =
+        this._startSphere.position.y;
+      this._startHandleLine.geometry.attributes.position.array[2] =
+        this._startSphere.position.z;
 
       this._startHandleLine.geometry.attributes.position.array[3] = x;
       this._startHandleLine.geometry.attributes.position.array[4] = y;
@@ -751,13 +754,19 @@ class Patterns {
 
       this._startHandleLine.geometry.attributes.position.needsUpdate = true;
 
-      this._endHandleLine.geometry.attributes.position.array[0] = this._endSphere.position.x;
-      this._endHandleLine.geometry.attributes.position.array[1] = this._endSphere.position.y;
-      this._endHandleLine.geometry.attributes.position.array[2] = this._endSphere.position.z;
+      this._endHandleLine.geometry.attributes.position.array[0] =
+        this._endSphere.position.x;
+      this._endHandleLine.geometry.attributes.position.array[1] =
+        this._endSphere.position.y;
+      this._endHandleLine.geometry.attributes.position.array[2] =
+        this._endSphere.position.z;
 
-      this._endHandleLine.geometry.attributes.position.array[3] = this._endHandle.position.x;
-      this._endHandleLine.geometry.attributes.position.array[4] = this._endHandle.position.y;
-      this._endHandleLine.geometry.attributes.position.array[5] = this._endHandle.position.z;
+      this._endHandleLine.geometry.attributes.position.array[3] =
+        this._endHandle.position.x;
+      this._endHandleLine.geometry.attributes.position.array[4] =
+        this._endHandle.position.y;
+      this._endHandleLine.geometry.attributes.position.array[5] =
+        this._endHandle.position.z;
       this._endHandleLine.geometry.attributes.position.needsUpdate = true;
     }
 
@@ -803,7 +812,7 @@ class Patterns {
     if (this._stats !== undefined) {
       this._stats.update();
     }
-    if (this._audioPlayProgress <= 1.0 && this._audioStartedAt > 0) {
+    if (this._audioPlayProgress <= 1.0 && this._audioStartedAt >= 0) {
       patternsLogic.actions.updatePlayProgress(this._audioPlayProgress);
       this._$f++;
     }
